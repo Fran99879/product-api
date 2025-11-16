@@ -1,0 +1,6 @@
+
+### Todos los productos
+GET http://localhost:1212/products
+
+### Por Id
+GET http://localhost:1212/products/1
