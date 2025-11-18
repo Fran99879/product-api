@@ -3,4 +3,19 @@
 GET http://localhost:1212/products
 
 ### Por Id
-GET http://localhost:1212/products/1
+GET http://localhost:1212/products/2
+
+### Marca
+GET http://localhost:1212/products?marca=xiaomi
+
+### Crear un producto
+POST http://localhost:1212/products
+Content-Type: application/json
+
+{
+  "nombre": "iPhone 13",
+  "descripcion": "Pantalla OLED de 5.1 pulgadas, chipset A16 Bionic y cámara de 48 MP.",
+  "precio": 500,
+  "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
+  "marca": "Apple"
+}
