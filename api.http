@@ -13,9 +13,20 @@ POST http://localhost:1212/products
 Content-Type: application/json
 
 {
+  "sql": "SELECT * FROM users",
   "nombre": "iPhone 13",
   "descripcion": "Pantalla OLED de 5.1 pulgadas, chipset A16 Bionic y cámara de 48 MP.",
-  "precio": 500,
+  "precio": 455,
   "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
   "marca": "Apple"
+}
+
+### Actualizar un producto
+PATCH http://localhost:1212/products/2
+Content-Type: application/json
+
+{
+  "id": 6,
+  "nombre": "Hola",
+  "precio": 35
 }

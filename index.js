@@ -1,6 +1,6 @@
 import express, { json } from 'express'
 //import cors from 'cors'
-import { validateProduct } from './schemas/prodcut.js'
+import { validateProduct, validatePartialProduct } from './schemas/prodcut.js'
 
 
 import products from './products.json' with { type: 'json'}
@@ -33,11 +33,12 @@ app.get('/products/:id', (req, res) => {
   res.status(404).json({ message: 'No se encontro el producto' })
 })
 
-app.post('/products', validateProduct, (req, res) => {
+app.post('/products', (req, res) => {
   const result = validateProduct(req.body)
 
-  if(result.error) return res.status(400).json({ error: result.error.message })
-
+  if (!result.success) {
+    return res.status(400).json({ error: JSON.parse(result.error.message) })
+  }
   // Encontra el ID mas alto y generar el siguiente ID incremental
   const maxId = products.length > 0
     ? Math.max(...products.map(p => parseInt(p.id) || 0))
@@ -52,6 +53,31 @@ app.post('/products', validateProduct, (req, res) => {
   products.push(newProd)
 
   res.status(201).json(newProd)
+})
+
+app.patch('/products/:id', (req, res) => {
+  const result = validatePartialProduct(req.body)
+
+  if (!result.success) {
+    return res.status(400).json({ error: JSON.parse(result.error.message) })
+  }
+
+  const { id } = req.params
+  const prodIndex = products.findIndex(p => p.id === id)
+
+  if (prodIndex === -1) {
+    return res.status(404).json({ message: 'Product not found' })
+  }
+
+  const updateProd = {
+    ...products[prodIndex],
+    ...result.data
+  }
+
+  products[prodIndex] = updateProd
+
+  return res.json(updateProd)
+
 })
 
 const PORT = process.env.PORT ?? 1212
