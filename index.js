@@ -1,18 +1,26 @@
 import express, { json } from 'express'
-//import cors from 'cors'
+import cors from 'cors'
 import { validateProduct, validatePartialProduct } from './schemas/prodcut.js'
-
 
 import products from './products.json' with { type: 'json'}
 
 const app = express()
 
+app.use(cors({
+  origin: (origin, callback) => {
+    const ACCEPTED_ORIGINS = [
+      'http://localhost:8080'
+    ]
+    if (ACCEPTED_ORIGINS.includes(origin) || !origin) {
+      return callback(null, origin)
+    }
+    return callback(new Error('Not allowed by CORS'))
+  }
+}))
 app.disable('x-powered-by')
 app.use(json())
 
-app.get('/', (req, res) => {
-  res.json({ message: 'Hola' })
-})
+
 
 app.get('/products', (req, res) => {
   const { marca } = req.query
@@ -39,7 +47,6 @@ app.post('/products', (req, res) => {
   if (!result.success) {
     return res.status(400).json({ error: JSON.parse(result.error.message) })
   }
-  // Encontra el ID mas alto y generar el siguiente ID incremental
   const maxId = products.length > 0
     ? Math.max(...products.map(p => parseInt(p.id) || 0))
     : 0
@@ -78,6 +85,19 @@ app.patch('/products/:id', (req, res) => {
 
   return res.json(updateProd)
 
+})
+
+app.delete('/products/:id', (req, res) => {
+  const { id } = req.params
+  const prodIndex = products.findIndex(p => p.id === id)
+
+  if (prodIndex === -1) {
+    return res.status(404).json({ message: 'Product not found' })
+  }
+
+  products.splice(prodIndex, 1)
+
+  return res.json({ message: 'Product deleted' })
 })
 
 const PORT = process.env.PORT ?? 1212

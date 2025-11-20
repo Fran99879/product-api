@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Api Rest</title>
+  <style>
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    article {
+      display: flex;
+      background-color: #fff;
+      box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2);
+      }
+    }
+    article h2 {
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin: 0;
+      text-align: center;
+    }
+    article p {
+      font-size: 1rem;
+      margin: 0;
+      text-align: center;
+      color: #666;
+    }
+    article img {
+      margin-bottom: 10px;
+      width: 320px;
+      height: 240px;
+      max-height: 100%;
+      object-fit: cover;
+    }
+  </style>
+  <script type="module">
+    fetch('http://localhost:1212/products')
+    .then(res => res.json())
+    .then(products => {
+      const html = products.map(product => {
+        return `
+          <article data-id="${product.id}">
+          <h2>${product.nombre}</h2>
+          <p>${product.descripcion}</p>
+          <p>${product.precio}</p>
+          <img src="${product.image}" alt="${product.nombre}">
+          <p>${product.marca}</p>
+          <p>${product.rate}</p>
+
+          <button>Eliminar</button>
+        </article>
+      `}).join('')
+      document.querySelector('main').innerHTML = html;
+      document.addEventListener('click', e => {
+        if (e.target.matches('button')) {
+          const article = e.target.closest('article')
+          const id = article.dataset.id
+          fetch(`http://localhost:1212/products/${id}`, {
+            method: 'DELETE'
+          })
+          .then(res => {
+            if (res.ok) {
+              article.remove();
+            } else {
+              console.error('Error al eliminar:', res.status, res.statusText);
+            }
+          })
+          .catch(error => {
+            console.error('Error en la petición:', error);
+          })
+        }
+      })
+     })
+  </script>
+</head>
+<body>
+  <main></main>
+</body>
+</html>
