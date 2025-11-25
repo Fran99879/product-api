@@ -6,7 +6,7 @@ GET http://localhost:1212/products
 GET http://localhost:1212/products/2
 
 ### Marca
-GET http://localhost:1212/products?marca=xiaomi
+GET http://localhost:1212/products?marca=apple
 
 ### Crear un producto
 POST http://localhost:1212/products
@@ -27,6 +27,6 @@ Content-Type: application/json
 
 {
   "id": 6,
-  "nombre": "Hola",
+  "nombre": "dsadasd",
   "precio": 35
 }
