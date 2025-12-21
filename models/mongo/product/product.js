@@ -1,5 +1,5 @@
 import mongoose from 'mongoose'
-import { Product } from '../../schemas/product.mongodb.js'
+import { Product } from '../../../schemas/product.mongodb.js'
 
 export class ProductModel {
   static async getAll ({ marca }) {

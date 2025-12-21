@@ -1,16 +1,25 @@
 import express, { json } from 'express'
 import 'dotenv/config'
 import { connectMongo } from './database/mongodb.js'
+import morgan from 'morgan'
+import cookieParser from 'cookie-parser'
 
-import { createProductRouter } from './routes/product.js'
+import { createProductRouter } from './routes/product/product.js'
 import { corsMiddleware } from './middlewares/cors.js'
+import authRoutes from './routes/user/auth.js'
 
 export const createApp = async ({ productModel }) => {
+
   const app = express()
+
+  app.use(morgan('dev'))
   app.use(corsMiddleware())
   app.use(json())
+  app.use(cookieParser(process.env.TOKEN_SECRET))
+
   app.disable('x-powered-by')
 
+  app.use('/user', authRoutes)
   app.use('/products', createProductRouter({ productModel }))
 
   await connectMongo()
