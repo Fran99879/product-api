@@ -1,40 +1,43 @@
 import { validateProduct, validatePartialProduct } from '../schemas/product.js'
-import { ProductModel } from '../models/product.js'
 
 export class ProductController {
-  static async getAll (req, res) {
+  constructor({ productModel }) {
+    this.productModel = productModel
+  }
+  getAll = async (req, res) => {
     const { marca } = req.query
-    const products = await ProductModel.getAll({ marca })
+    const products = await this.productModel.getAll({ marca })
     res.json(products)
   }
-  static async create (req, res) {
+  create = async (req, res) => {
     const result = validateProduct(req.body)
     if (!result.success) {
       return res.status(400).json({ error: JSON.parse(result.error.message) })
     }
-    const newProd = await ProductModel.create({ input: result.data })
+    const newProd = await this.productModel.create({ input: result.data })
     res.status(201).json(newProd)
   }
 
-  static async getById (req, res) {
+  getById = async (req, res) => {
     const { id } = req.params
-    const pro = await ProductModel.getById(id)
+    const pro = await this.productModel.getById({ id })
     if (pro) return res.json(pro)
     res.status(404).json({ message: 'No se encontro el producto' })
   }
-  static async update (req, res) {
+  update = async (req, res) => {
     const result = validatePartialProduct(req.body)
     if (!result.success) {
       return res.status(400).json({ error: JSON.parse(result.error.message) })
     }
     const { id } = req.params
-    const updateProd = await ProductModel.update({ id, input: result.data })
+    const updateProd = await this.productModel.update({ id, input: result.data })
     return res.json(updateProd)
   }
-  static async delete (req, res) {
+  delete = async (req, res) => {
     const { id } = req.params
-    const result = await ProductModel.delete({ id })
+    const result = await this.productModel.delete({ id })
     if (result === false) { return res.status(404).json({ message: 'Product not found' }) }
-    return res.json({ message: 'Product deleted' })
+    return res.json({ message: 'Producto Eliminado' })
   }
 }
+

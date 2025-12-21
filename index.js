@@ -1,18 +1,22 @@
 import express, { json } from 'express'
+import 'dotenv/config'
+import { connectMongo } from './database/mongodb.js'
 
-import productRouter from './routes/product.js'
+import { createProductRouter } from './routes/product.js'
 import { corsMiddleware } from './middlewares/cors.js'
 
-const app = express()
+export const createApp = async ({ productModel }) => {
+  const app = express()
+  app.use(corsMiddleware())
+  app.use(json())
+  app.disable('x-powered-by')
 
-app.use(corsMiddleware())
-app.use(json())
-app.disable('x-powered-by')
+  app.use('/products', createProductRouter({ productModel }))
 
-app.use('/products', productRouter)
+  await connectMongo()
 
-const PORT = process.env.PORT ?? 1212
+  app.listen(process.env.PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${process.env.PORT}`)
+  })
 
-app.listen(PORT, () => {
-  console.log(`Server listening on port http://localhost:${PORT}`)
-})
+}

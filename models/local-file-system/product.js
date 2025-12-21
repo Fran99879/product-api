@@ -1,9 +1,9 @@
-import products from '../products.json' with { type: 'json'}
+import products from '../../products.json' with { type: 'json'}
 
 export class ProductModel {
   static async getAll ({ marca }) {
     if (marca) {
-      return products.filter(product => 
+      return products.filter(product =>
         product.marca.toLowerCase() === marca.toLowerCase()
       );
     }
