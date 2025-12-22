@@ -9,15 +9,27 @@ export class ProductController {
     const products = await this.productModel.getAll({ marca })
     res.json(products)
   }
+  getMyProducts = async (req, res) => {
+    const products = await this.productModel.getByOwner({
+      owner: req.user.id
+    })
+    res.json(products)
+  }
   create = async (req, res) => {
     const result = validateProduct(req.body)
     if (!result.success) {
       return res.status(400).json({ error: JSON.parse(result.error.message) })
     }
-    const newProd = await this.productModel.create({ input: result.data })
+
+    const newProd = await this.productModel.create({
+      input: {
+        ...result.data,
+        owner: req.user.id
+      }
+    })
+
     res.status(201).json(newProd)
   }
-
   getById = async (req, res) => {
     const { id } = req.params
     const pro = await this.productModel.getById({ id })

@@ -10,7 +10,9 @@ export class ProductModel {
     }
     return Product.find()
   }
-
+  static async getByOwner ({ owner }) {
+    return await Product.find({ owner })
+  }
   static async getById ({ id }) {
     if (!mongoose.Types.ObjectId.isValid(id)) return null
     return await Product.findById(id)
