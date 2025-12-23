@@ -7,6 +7,8 @@ import cookieParser from 'cookie-parser'
 import { createProductRouter } from './routes/product/product.js'
 import { corsMiddleware } from './middlewares/cors.js'
 import authRoutes from './routes/user/auth.js'
+import orderRoutes from './routes/order/order.js'
+
 
 export const createApp = async ({ productModel }) => {
 
@@ -19,6 +21,8 @@ export const createApp = async ({ productModel }) => {
 
   app.disable('x-powered-by')
 
+
+  app.use('/orders', orderRoutes)
   app.use('/user', authRoutes)
   app.use('/products', createProductRouter({ productModel }))
 

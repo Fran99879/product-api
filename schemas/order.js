@@ -8,3 +8,8 @@ export const createOrderSchema = z.object({
     })
   ).min(1)
 })
+
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(['pending', 'paid', 'shipped', 'cancelled'])
+})
+

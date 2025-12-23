@@ -2,10 +2,10 @@ import mongoose from 'mongoose'
 import { Product } from '../../../schemas/product.mongodb.js'
 
 export class ProductModel {
-  static async getAll ({ marca }) {
-    if (marca) {
+  static async getAll ({ brand }) {
+    if (brand) {
       return Product.find({
-        marca: { $regex: marca, $options: 'i' }
+        brand: { $regex: brand, $options: 'i' }
       })
     }
     return Product.find()
@@ -20,6 +20,7 @@ export class ProductModel {
 
   static async create ({ input }) {
     const product = new Product(input)
+
     return product.save()
   }
 

@@ -1,5 +1,4 @@
 import mongoose from 'mongoose'
-
 const orderSchema = new mongoose.Schema({
   buyer: {
     type: mongoose.Schema.Types.ObjectId,
@@ -30,7 +29,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'paid', 'cancelled'],
+    enum: ['pending', 'paid', 'shipped', 'cancelled'],
     default: 'pending'
   }
 }, {

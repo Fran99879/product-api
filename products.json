@@ -1,47 +1,52 @@
 [
     {
       "id": "1",
-      "nombre": "iPhone 15",
-      "descripcion": "Pantalla OLED de 6.1 pulgadas, chipset A16 Bionic y cámara de 48 MP.",
-      "precio": 1100,
+      "name": "iPhone 15",
+      "description": "Pantalla OLED de 6.1 pulgadas, chipset A16 Bionic y cámara de 48 MP.",
+      "price": 1100,
       "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
-      "marca": "Apple",
-      "rate": 9
+      "brand": "Apple",
+      "rate": 9,
+      "quantity": 50
     },
     {
       "id": "2",
-      "nombre": "Samsung Galaxy S23",
-      "descripcion": "Pantalla Dynamic AMOLED 6.1”, Snapdragon 8 Gen 2 y triple cámara.",
-      "precio": 950,
+      "name": "Samsung Galaxy S23",
+      "description": "Pantalla Dynamic AMOLED 6.1”, Snapdragon 8 Gen 2 y triple cámara.",
+      "price": 950,
       "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
-      "marca": "Samsung",
-      "rate": 7
+      "brand": "Samsung",
+      "rate": 7,
+      "quantity": 200
     },
     {
       "id": "3",
-      "nombre": "Xiaomi 13",
-      "descripcion": "Pantalla AMOLED 6.36”, Snapdragon 8 Gen 2 y cámara Leica.",
-      "precio": 800,
+      "name": "Xiaomi 13",
+      "description": "Pantalla AMOLED 6.36”, Snapdragon 8 Gen 2 y cámara Leica.",
+      "price": 800,
       "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
-      "marca": "Xiaomi",
-      "rate": 9
+      "brand": "Xiaomi",
+      "rate": 9,
+      "quantity": 3
     },
     {
       "id": "4",
-      "nombre": "Google Pixel 8",
-      "descripcion": "Pantalla Actua 6.2”, chip Tensor G3 y cámara con IA avanzada.",
-      "precio": 900,
+      "name": "Google Pixel 8",
+      "description": "Pantalla Actua 6.2”, chip Tensor G3 y cámara con IA avanzada.",
+      "price": 900,
       "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
-      "marca": "Google",
-      "rate": 8
+      "brand": "Google",
+      "rate": 8,
+      "quantity": 2
     },
     {
       "id": "5",
-      "nombre": "Motorola Edge 40",
-      "descripcion": "Pantalla pOLED 6.55”, Dimensity 8020 y diseño ultraligero.",
-      "precio": 650,
+      "name": "Motorola Edge 40",
+      "description": "Pantalla pOLED 6.55”, Dimensity 8020 y diseño ultraligero.",
+      "price": 650,
       "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
-      "marca": "Motorola",
-      "rate": 4
+      "brand": "Motorola",
+      "rate": 4,
+      "quantity": 10
     }
 ]

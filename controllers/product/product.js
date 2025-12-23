@@ -5,8 +5,8 @@ export class ProductController {
     this.productModel = productModel
   }
   getAll = async (req, res) => {
-    const { marca } = req.query
-    const products = await this.productModel.getAll({ marca })
+    const { brand } = req.query
+    const products = await this.productModel.getAll({ brand })
     res.json(products)
   }
   getMyProducts = async (req, res) => {

@@ -2,16 +2,16 @@ import mongoose from 'mongoose'
 
 const productSchema = new mongoose.Schema(
   {
-    nombre: {
+    name: {
       type: String,
       required: true,
       trim: true
     },
-    descripcion: {
+    description: {
       type: String,
       default: ''
     },
-    precio: {
+    price: {
       type: Number,
       required: true,
       min: 1
@@ -20,7 +20,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true
     },
-    marca: {
+    brand: {
       type: String,
       enum: ['Apple', 'Samsung', 'Xiaomi', 'Google', 'Motorola'],
       required: true
@@ -35,8 +35,12 @@ const productSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 0
     }
-
   },
   {
     timestamps: true,
