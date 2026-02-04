@@ -39,7 +39,7 @@ Este es el backend para una aplicación de productos electrónicos, construido c
 3. Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
    ```
    PORT=1212
-   TOKEN_SECRET=tu_secreto_jwt
+   TOKEN_SECRET=
    MONGO_URI=mongodb://localhost:27017/productdb
    DATABASE_URL=mysql://root:@localhost:3306/productdb
    ```

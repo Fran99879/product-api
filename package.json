@@ -2,13 +2,16 @@
   "name": "backend-products",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "start:mysql": "node --watch server-with-mysql.js",
-    "start:local": "node --watch server-with-local.js",
-    "start:mongodb": "node --watch server-with-mongodb.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .js,.ts",
+    "lint:fix": "eslint src --ext .js,.ts --fix",
+    "format": "prettier --write src"
   },
   "keywords": [],
   "author": "",
@@ -22,10 +25,25 @@
     "jsonwebtoken": "9.0.3",
     "mongoose": "9.0.2",
     "morgan": "1.10.1",
-    "mysql2": "3.16.0",
-    "zod": "4.1.12"
+    "mysql2": "3.16.0"
   },
   "devDependencies": {
-    "nodemon": "3.1.11"
+    "@types/bcryptjs": "^3.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^25.0.6",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "nodemon": "3.1.11",
+    "prettier": "^3.8.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "zod": "^4.3.5"
   }
 }
