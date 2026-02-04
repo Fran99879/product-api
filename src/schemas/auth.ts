@@ -12,11 +12,15 @@ export const registerSchema = z.object({
 
   password: z
     .string()
-    .min(6, 'Password must be at least 6 characters'),
-  role: z
-    .enum(['user', 'seller', 'admin'])
-    .default('user')
+    .min(6, 'Password must be at least 6 characters')
 })
+
+export type RegisterInput = z.infer<typeof registerSchema>
+
+export const validateRegister = (input: unknown) => {
+  return registerSchema.safeParse(input)
+}
+
 
 export const loginSchema = z.object({
   email: z
@@ -28,3 +32,9 @@ export const loginSchema = z.object({
     .string()
     .min(6, 'Password must be at least 6 characters')
 })
+
+export type LoginInput = z.infer<typeof loginSchema>
+
+export const validateLogin = (input: unknown) => {
+  return loginSchema.safeParse(input)
+}

@@ -5,10 +5,10 @@ import type { JwtPayloadUser } from '../types/auth.js'
 export function createAccessToken (payload: JwtPayloadUser): Promise<string> {
   return new Promise((resolve, reject) => {
     jwt.sign(
-      payload,
-      ENV.TOKEN_SECRET,
-      { expiresIn: '1d' },
-      (err, token) => {
+    payload satisfies JwtPayloadUser,
+    ENV.TOKEN_SECRET,
+    { expiresIn: '1d' },
+    (err, token) => {
         if (err || !token) return reject(err)
         resolve(token)
       }

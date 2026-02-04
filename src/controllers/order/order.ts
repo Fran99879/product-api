@@ -1,7 +1,8 @@
+import type { Request, Response } from 'express'
 import Order from '../../models/mongo/order/order.js'
 import { Product } from '../../schemas/product.mongodb.js'
 
-export const createOrder = async (req, res) => {
+export const createOrder = async (req: Request, res: Response) => {
   try {
     const products = await Product.find({
       _id: { $in: req.body.items.map(i => i.product) }
@@ -47,7 +48,7 @@ export const createOrder = async (req, res) => {
   }
 }
 
-export const getMyOrders = async (req, res) => {
+export const getMyOrders = async (req: Request, res: Response) => {
   const orders = await Order.find({ buyer: req.user.id })
     .populate({
       path: 'items.product',
@@ -58,7 +59,7 @@ export const getMyOrders = async (req, res) => {
   res.json(orders)
 }
 
-export const getSellerOrders = async (req, res) => {
+export const getSellerOrders = async (req: Request, res: Response) => {
   const orders = await Order.find({
     'items.product': {
       $in: await Product.find({ owner: req.user.id }).distinct('_id')
@@ -72,7 +73,7 @@ export const getSellerOrders = async (req, res) => {
   res.json(orders)
 }
 
-export const getAllOrders = async (req, res) => {
+export const getAllOrders = async (req: Request, res: Response) => {
   const orders = await Order.find()
     .populate('buyer', '-role')
     .populate({
@@ -84,7 +85,7 @@ export const getAllOrders = async (req, res) => {
   res.json(orders)
 }
 
-export const deleteOrder = async (req, res) => {
+export const deleteOrder = async (req: Request, res: Response) => {
   try {
     const order = await Order.findById(req.params.id)
 
@@ -109,7 +110,7 @@ export const deleteOrder = async (req, res) => {
   }
 }
 
-export const updateOrderStatus = async (req, res) => {
+export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
     const { status } = req.body
     const order = await Order.findById(req.params.id)
