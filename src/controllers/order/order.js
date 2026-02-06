@@ -1,8 +1,7 @@
-import type { Request, Response } from 'express'
 import Order from '../../models/mongo/order/order.js'
 import { Product } from '../../schemas/product.mongodb.js'
 
-export const createOrder = async (req: Request, res: Response) => {
+export const createOrder = async (req, res) => {
   try {
     const products = await Product.find({
       _id: { $in: req.body.items.map(i => i.product) }
@@ -48,7 +47,7 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 }
 
-export const getMyOrders = async (req: Request, res: Response) => {
+export const getMyOrders = async (req, res) => {
   const orders = await Order.find({ buyer: req.user.id })
     .populate({
       path: 'items.product',
@@ -59,7 +58,7 @@ export const getMyOrders = async (req: Request, res: Response) => {
   res.json(orders)
 }
 
-export const getSellerOrders = async (req: Request, res: Response) => {
+export const getSellerOrders = async (req, res) => {
   const orders = await Order.find({
     'items.product': {
       $in: await Product.find({ owner: req.user.id }).distinct('_id')
@@ -73,7 +72,7 @@ export const getSellerOrders = async (req: Request, res: Response) => {
   res.json(orders)
 }
 
-export const getAllOrders = async (req: Request, res: Response) => {
+export const getAllOrders = async (req, res) => {
   const orders = await Order.find()
     .populate('buyer', '-role')
     .populate({
@@ -85,7 +84,7 @@ export const getAllOrders = async (req: Request, res: Response) => {
   res.json(orders)
 }
 
-export const deleteOrder = async (req: Request, res: Response) => {
+export const deleteOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
 
@@ -110,7 +109,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
   }
 }
 
-export const updateOrderStatus = async (req: Request, res: Response) => {
+export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body
     const order = await Order.findById(req.params.id)

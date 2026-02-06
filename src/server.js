@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { createApp } from './index.js'
+import { createApp } from './app.js'
 
 import { connectMongo } from './database/mongodb.js'
 import { ProductModel as MongoProduct } from './models/mongo/product/product.js'

@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express'
 import { validateProduct, validatePartialProduct } from '../../schemas/product.js'
-import type { ProductModel } from '../../models/product.model.js'
+import type { ProductModel } from '../../models/ProductModel.js'
 import type { AuthenticatedRequest } from '../../types/request.js'
 
 export class ProductController {
