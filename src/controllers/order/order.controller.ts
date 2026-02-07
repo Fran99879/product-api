@@ -1,135 +1,82 @@
 import type { Request, Response } from 'express'
-import { validateOrder, parseUpdateOrder } from '../../schemas/order.js'
-import type { ZodError } from 'zod'
+import { validateCreateOrder, validateUpdateOrder } from '../../schemas/order.schema.js'
 import type { OrderModel } from '../../models/order.model.js'
-import type { AuthenticatedRequest } from '../../types/request.js'
-import { asyncHandler } from '../../utils/asyncHandler.js'
 import { AppError } from '../../errors/appError.js'
 
-export class OrderController {
-  constructor (private readonly orderModel: OrderModel) {}
-
-  getAll = async (req: Request, res: Response) => {
-    const orders = await this.orderModel.getAll({
-      role: 'admin'
-    })
+export const createOrderController = ({ orderModel }: { orderModel: OrderModel }) => {
+  const getAll = async (req: Request, res: Response) => {
+    const q = req.query as Record<string, string | undefined>
+    const role = q.role as 'admin' | 'seller' | 'user' | undefined
+    const userId = q.userId
+    const orders = await orderModel.getAll({ role, userId })
     res.json(orders)
   }
 
-  getMyOrders = async (req: AuthenticatedRequest, res: Response) => {
-    const orders = await this.orderModel.getByUser({
-      userId: req.user.id
-    })
-    res.json(orders)
-  }
-
-  getSellerOrders = async (req: AuthenticatedRequest, res: Response) => {
-    const orders = await this.orderModel.getSellerOrders({
-      sellerId: req.user.id
-    })
-    res.json(orders)
-  }
-
-  getById = async (req: Request, res: Response) => {
+  const getById = async (req: Request<{ id: string }>, res: Response) => {
     const { id } = req.params
-
-    if (!id || typeof id !== 'string') {
-      throw new AppError('Invalid id', 400)
-    }
-
-    const order = await this.orderModel.getById({ id })
-
-    if (!order) {
-      throw new AppError('Order not found', 404)
-    }
-
+    if (!id || typeof id !== 'string') throw new AppError('Invalid id', 400)
+    const order = await orderModel.getById(id)
+    if (!order) throw new AppError('Order not found', 404)
     res.json(order)
   }
 
-  create = async (req: AuthenticatedRequest, res: Response) => {
-    const result = validateOrder(req.body)
+  const getMyOrders = async (req: Request, res: Response) => {
+    if (!req.user) throw new AppError('Unauthorized', 401)
+    const orders = await orderModel.getByUser(req.user.id)
+    res.json(orders)
+  }
 
-    if (!result.success) {
-      return res.status(400).json({
-        errors: result.error.issues
-      })
-    }
+  const getSellerOrders = async (req: Request, res: Response) => {
+    if (!req.user) throw new AppError('Unauthorized', 401)
+    const orders = await orderModel.getSellerOrders(req.user.id)
+    res.json(orders)
+  }
+
+  const create = async (req: Request, res: Response) => {
+    if (!req.user) throw new AppError('Unauthorized', 401)
+    const parsed = validateCreateOrder(req.body)
+    if (!parsed.success) return res.status(400).json({ errors: parsed.error.issues })
 
     try {
-      const newOrder = await this.orderModel.create({
-        input: {
-          ...result.data,
-          buyer: req.user.id
-        }
-      })
-
-      res.status(201).json(newOrder)
+      const created = await orderModel.create({ ...parsed.data, buyer: req.user.id })
+      res.status(201).json(created)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create order'
       throw new AppError(message, 400)
     }
   }
 
-  update = asyncHandler(async (req: Request<{ id: string }, unknown, unknown>, res: Response) => {
-    const { id } = (req as Request<{ id: string }>).params
+  const update = async (req: Request<{ id: string }>, res: Response) => {
+    const { id } = req.params
+    if (!id || typeof id !== 'string') throw new AppError('Invalid id', 400)
 
-    if (!id || typeof id !== 'string') {
-      throw new AppError('Invalid id', 400)
-    }
-
-    let dto
-    try {
-      dto = parseUpdateOrder(req.body)
-    } catch (err) {
-      const zErr = err as ZodError
-      if (zErr && Array.isArray((zErr as any).issues)) {
-        return res.status(400).json({ errors: (zErr as any).issues })
-      }
-      return res.status(400).json({ message: err instanceof Error ? err.message : String(err) })
-    }
+    const parsed = validateUpdateOrder(req.body)
+    if (!parsed.success) return res.status(400).json({ errors: parsed.error.issues })
 
     try {
-      const updated = await this.orderModel.update({
-        id,
-        input: dto
-      })
-
-      if (!updated) {
-        throw new AppError('Order not found', 404)
-      }
-
+      const updated = await orderModel.update(id, parsed.data)
+      if (!updated) throw new AppError('Order not found', 404)
       res.json(updated)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update order'
       throw new AppError(message, 400)
     }
-  })
-
-  delete = async (req: AuthenticatedRequest, res: Response) => {
-    const { id } = (req as Request<{ id: string }>).params
-
-    if (!id || typeof id !== 'string') {
-      throw new AppError('Invalid id', 400)
-    }
-
-    // Verify user owns this order before deletion
-    const order = await this.orderModel.getById({ id })
-    if (!order) {
-      throw new AppError('Order not found', 404)
-    }
-
-    if (order.buyer !== req.user.id) {
-      throw new AppError('You can only delete your own orders', 403)
-    }
-
-    const deleted = await this.orderModel.delete({ id })
-
-    if (!deleted) {
-      throw new AppError('Failed to delete order', 404)
-    }
-
-    res.json({ message: 'Order deleted successfully' })
   }
-}
 
-export default OrderController
+  const remove = async (req: Request<{ id: string }>, res: Response) => {
+    if (!req.user) throw new AppError('Unauthorized', 401)
+    const { id } = req.params as { id: string }
+    if (!id || typeof id !== 'string') throw new AppError('Invalid id', 400)
+
+    const order = await orderModel.getById(id)
+    if (!order) throw new AppError('Order not found', 404)
+    if (order.buyer !== req.user.id) throw new AppError('You can only delete your own orders', 403)
+
+    const deleted = await orderModel.delete(id)
+    if (!deleted) throw new AppError('Failed to delete order', 400)
+
+    res.json({ message: 'Order deleted' })
+  }
+
+  return { getAll, getById, getMyOrders, getSellerOrders, create, update, remove }
+}

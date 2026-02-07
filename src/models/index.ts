@@ -2,7 +2,7 @@ import { connectMongo } from '../database/mongodb.js'
 
 import { MongoProductModel } from './mongo/product/product.js'
 import { LocalProductModel } from './local-file-system/product.js'
-import { MongoOrderModel } from './mongo/order/order.model.js'
+import { MongoOrderModel } from './mongo/order/order.mongo.js'
 
 import type { ProductModel } from './product.model.js'
 import type { OrderModel } from './order.model.js'

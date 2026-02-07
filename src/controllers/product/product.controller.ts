@@ -2,7 +2,6 @@ import type { Request, Response } from 'express'
 import { validateProduct, parseUpdateProduct } from '../../schemas/product.js'
 import type { ZodError } from 'zod'
 import type { ProductModel } from '../../models/product.model.js'
-import type { AuthenticatedRequest } from '../../types/request.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import { AppError } from '../../errors/appError.js'
 
@@ -18,14 +17,16 @@ export class ProductController {
     res.json(products)
   }
 
-  getMyProducts = async (req: AuthenticatedRequest, res: Response) => {
-  const products = await this.productModel.getByOwner({
-    owner: req.user.id
-  })
-  res.json(products)
+  getMyProducts = async (req: Request, res: Response) => {
+    if (!req.user) throw new AppError('Unauthorized', 401)
+    const products = await this.productModel.getByOwner({
+      owner: req.user.id
+    })
+    res.json(products)
   }
 
-  create = async (req: AuthenticatedRequest, res: Response) => {
+  create = async (req: Request, res: Response) => {
+    if (!req.user) throw new AppError('Unauthorized', 401)
     const result = validateProduct(req.body)
 
     if (!result.success) {

@@ -1,20 +1,17 @@
-import type { Order, OrderInput, OrderUpdate } from '../schemas/order.js'
+import type { Order, CreateOrderInput, UpdateOrderInput } from '../schemas/order.schema.js'
 
 export interface OrderModel {
+  create(input: CreateOrderInput): Promise<Order>
+
+  getById(id: string): Promise<Order | null>
+
   getAll(params?: { role?: 'admin' | 'seller' | 'user'; userId?: string }): Promise<Order[]>
 
-  getById(params: { id: string }): Promise<Order | null>
+  update(id: string, input: UpdateOrderInput): Promise<Order | null>
 
-  getByUser(params: { userId: string }): Promise<Order[]>
+  delete(id: string): Promise<boolean>
 
-  getSellerOrders(params: { sellerId: string }): Promise<Order[]>
+  getByUser(userId: string): Promise<Order[]>
 
-  create(params: { input: OrderInput }): Promise<Order>
-
-  update(params: {
-    id: string
-    input: OrderUpdate
-  }): Promise<Order | null>
-
-  delete(params: { id: string }): Promise<boolean>
+  getSellerOrders(sellerId: string): Promise<Order[]>
 }

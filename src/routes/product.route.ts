@@ -4,7 +4,6 @@ import { ProductController } from '../controllers/product/product.controller.js'
 import { requireRoles } from '../middlewares/role.middleware.js'
 import { canEditProduct } from '../middlewares/ownership.middleware.js'
 import type { ProductModel } from '../models/product.model.js'
-import { asyncHandler } from '../utils/asyncHandler.js'
 
 
 export const createProductRouter = (
@@ -20,15 +19,15 @@ export const createProductRouter = (
   productRouter.get(
     '/my-products',
     authRequired,
-    requireRoles('seller', 'admin'),asyncHandler
-    (productController.getMyProducts)
+    requireRoles('seller', 'admin'),
+    productController.getMyProducts
   )
 
   productRouter.post(
     '/',
     authRequired,
-    requireRoles('seller', 'admin'),asyncHandler
-    (productController.create)
+    requireRoles('seller', 'admin'),
+    productController.create
   )
 
   productRouter.get('/:id', productController.getById)

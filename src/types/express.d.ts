@@ -1,5 +1,5 @@
 import type { JwtPayloadUser } from './auth.js'
-import type { Product } from './product.ts'
+import type { Product } from '../schemas/product.js'
 
 declare global {
   namespace Express {

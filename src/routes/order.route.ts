@@ -1,59 +1,22 @@
 import { Router } from 'express'
 import { authRequired } from '../middlewares/validateToken.js'
-import { validateSchema } from '../middlewares/validate.middleware.js'
-import { createOrderSchema } from '../schemas/order.js'
-import {
-  create,
-  getById,
-  getSellerOrders,
-  getAll,
-  delete,
-  update
-} from '../controllers/order/order.controller.js'
 import { requireRoles } from '../middlewares/role.middleware.js'
-import { updateOrderStatusSchema } from '../schemas/order.js'
+import type { OrderModel } from '../models/order.model.js'
+import { createOrderController } from '../controllers/order/order.controller.js'
 
-const router = Router()
+export const createOrderRouter = ({ orderModel }: { orderModel: OrderModel }) => {
+  const router = Router()
+  const controller = createOrderController({ orderModel })
 
-router.post(
-  '/',
-  authRequired,
-  validateSchema(createOrderSchema),
-  create
-)
+  router.get('/', authRequired, requireRoles('admin'), controller.getAll)
+  router.get('/my', authRequired, controller.getMyOrders)
+  router.get('/seller', authRequired, requireRoles('seller', 'admin'), controller.getSellerOrders)
+  router.post('/', authRequired, controller.create)
+  router.get('/:id', controller.getById)
+  router.patch('/:id', authRequired, controller.update)
+  router.delete('/:id', authRequired, controller.remove)
 
-router.get(
-  '/my',
-  authRequired,
-  getById
-)
+  return router
+}
 
-router.get(
-  '/seller',
-  authRequired,
-  requireRoles('seller'),
-  getSellerOrders
-)
-
-router.get(
-  '/',
-  authRequired,
-  requireRoles('admin'),
-  getAll
-)
-
-router.put(
-  '/:id/status',
-  authRequired,
-  validateSchema(updateOrderStatusSchema),
-  update
-)
-
-router.delete(
-  '/:id', 
-  authRequired, 
-  delete)
-
-export default router
-
-
+export default createOrderRouter

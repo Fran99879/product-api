@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import { createAuthController } from '../../controllers/user/auth.js'
-import { MongoUserModel } from '../../models/mongo/user/user.model.js'
-import { authRequired } from '../../middlewares/validateToken.js'
+import { createAuthController } from '../controllers/user/auth.controller.js'
+import { MongoUserModel } from '../models/mongo/user/user.model.js'
+import { authRequired } from '../middlewares/validateToken.js'
 
 export const authRouter = Router()
 

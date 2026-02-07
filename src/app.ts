@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser'
 import { corsMiddleware } from './middlewares/cors.js'
 import { createProductRouter } from './routes/product.route.js'
 import authRoutes from './routes/auth.route.js'
-import orderRouter from './routes/order.route.js'
+import { createOrderRouter } from './routes/order.route.js'
 import adminRouter from './routes/admin.route.js'
 import type { ProductModel } from './models/product.model.js'
 import type { OrderModel } from './models/order.model.js'
@@ -27,7 +27,7 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   
   app.disable('x-powered-by')
   
-  app.use('/orders', orderRouter)
+  app.use('/orders', createOrderRouter({ orderModel }))
   app.use('/user', authRoutes)
   app.use('/admin', adminRouter)
   app.use('/products', createProductRouter({ productModel }))
