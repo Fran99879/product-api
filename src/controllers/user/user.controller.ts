@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import type { UserModel } from '../../models/UserModel.js'
+import type { UserModel } from '../../models/user.model.js'
 import {
   validateChangeUserRoleParams,
   validateChangeUserRoleBody

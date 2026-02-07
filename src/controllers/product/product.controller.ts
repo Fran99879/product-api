@@ -1,7 +1,11 @@
 import type { Request, Response } from 'express'
-import { validateProduct, validatePartialProduct } from '../../schemas/product.js'
-import type { ProductModel } from '../../models/ProductModel.js'
+import { validateProduct, parseUpdateProduct } from '../../schemas/product.js'
+import type { ZodError } from 'zod'
+import type { ProductModel } from '../../models/product.model.js'
 import type { AuthenticatedRequest } from '../../types/request.js'
+import { asyncHandler } from '../../utils/asyncHandler.js'
+import { AppError } from '../../errors/appError.js'
+
 
 export class ProductController {
   constructor (private readonly productModel: ProductModel) {}
@@ -50,32 +54,43 @@ export class ProductController {
     const product = await this.productModel.getById({ id })
 
     if (!product) {
-      return res.status(404).json({ message: 'Producto no encontrado' })
+      throw new AppError('Product not found', 404)
     }
 
     res.json(product)
   }
 
-  update = async (req: Request, res: Response) => {
-    const result = validatePartialProduct(req.body)
-
-    if (!result.success) {
-      return res.status(400).json({
-        errors: result.error.issues
-      })
-    }
-
+  update = asyncHandler(async (req: Request<{ id: string }, any, unknown>, res: Response) => {
     const { id } = req.params
+
     if (!id || typeof id !== 'string') {
       return res.status(400).json({ message: 'Invalid id' })
     }
+
+    let dto
+    try {
+      dto = parseUpdateProduct(req.body)
+    } catch (err) {
+      const zErr = err as ZodError
+      if (zErr && Array.isArray((zErr as any).issues)) {
+        return res.status(400).json({ errors: (zErr as any).issues })
+      }
+      return res.status(400).json({ message: err instanceof Error ? err.message : String(err) })
+    }
+
     const updated = await this.productModel.update({
       id,
-      input: result.data
+      input: dto
     })
 
+    if (!updated) {
+      throw new AppError('Product not found', 404)
+
+    }
+
     res.json(updated)
-  }
+  })
+
 
   delete = async (req: Request, res: Response) => {
     const { id } = req.params
@@ -85,9 +100,10 @@ export class ProductController {
     const deleted = await this.productModel.delete({ id })
 
     if (!deleted) {
-      return res.status(404).json({ message: 'Product not found' })
+      throw new AppError('Product not found', 404)
+
     }
 
-    res.json({ message: 'Producto eliminado' })
+    res.json({ message: 'Product deleted' })
   }
 }

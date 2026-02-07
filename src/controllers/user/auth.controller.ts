@@ -2,7 +2,7 @@ import type { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import { createAccessToken } from '../../utils/jwt.js'
 import { validateRegister, validateLogin } from '../../schemas/auth.js'
-import type { UserModel } from '../../models/UserModel.js'
+import type { UserModel } from '../../models/user.model.js'
 
 export const createAuthController = (userModel: UserModel) => {
 

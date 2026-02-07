@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
-import type { ProductModel, Product } from '../types/product.ts'
+import type { ProductModel } from '../models/product.model.js'
+import type { Product } from '../schemas/product.js'
 
 export const canEditProduct = (productModel: ProductModel) => {
   return async (
