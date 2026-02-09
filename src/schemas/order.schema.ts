@@ -18,7 +18,15 @@ export type OrderItemInput = z.infer<typeof orderItemSchema>
 export type CreateOrderInput = z.infer<typeof createOrderSchema> & { buyer: string }
 export type UpdateOrderInput = z.infer<typeof updateOrderSchema>
 
-export type OrderItem = OrderItemInput & { price: number }
+export type OrderItem = {
+  product: {
+    id: string
+    owner: string
+  }
+  quantity: number
+  price: number
+}
+
 export type Order = {
   id: string
   buyer: string
@@ -28,6 +36,7 @@ export type Order = {
   createdAt: string
   updatedAt: string
 }
+
 
 export const validateCreateOrder = (input: unknown) => createOrderSchema.safeParse(input)
 export const validateUpdateOrder = (input: unknown) => updateOrderSchema.safeParse(input)

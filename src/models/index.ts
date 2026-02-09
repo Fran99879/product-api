@@ -1,4 +1,4 @@
-import { connectMongo } from '../database/mongodb.js'
+import { connectMongo } from '../config/db/mongodb.js'
 
 import { MongoProductModel } from './mongo/product/product.js'
 import { LocalProductModel } from './local-file-system/product.js'

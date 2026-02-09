@@ -20,11 +20,39 @@ type OrderDoc = Document & {
   updatedAt: Date
 }
 
-const mapDocToOrder = (doc: OrderDoc): Order => ({
+type PopulatedOwner = {
+  _id: Types.ObjectId
+}
+
+type PopulatedProduct = {
+  _id: Types.ObjectId
+  owner: PopulatedOwner
+}
+
+type PopulatedOrderItem = {
+  product: PopulatedProduct
+  quantity: number
+  price: number
+}
+
+type PopulatedOrderDoc = Document & {
+  buyer: Types.ObjectId
+  items: PopulatedOrderItem[]
+  total: number
+  status: 'pending' | 'paid' | 'shipped' | 'cancelled'
+  createdAt: Date
+  updatedAt: Date
+}
+
+
+const mapDocToOrder = (doc: PopulatedOrderDoc): Order => ({
   id: doc._id.toString(),
   buyer: doc.buyer.toString(),
   items: doc.items.map(i => ({
-    product: i.product.toString(),
+    product: {
+      id: i.product._id.toString(),
+      owner: i.product.owner._id.toString()
+    },
     quantity: i.quantity,
     price: i.price
   })),
@@ -33,6 +61,7 @@ const mapDocToOrder = (doc: OrderDoc): Order => ({
   createdAt: doc.createdAt.toISOString(),
   updatedAt: doc.updatedAt.toISOString()
 })
+
 
 const filterUndefined = <T extends Record<string, unknown>>(obj: T) => {
   const out: Record<string, unknown> = {}
@@ -68,7 +97,7 @@ export const MongoOrderModel: OrderModel = {
       items,
       total,
       status: 'pending'
-    }) as OrderDoc
+    })as unknown as PopulatedOrderDoc
 
     // Deduct stock
     for (const it of items) {
@@ -77,7 +106,7 @@ export const MongoOrderModel: OrderModel = {
 
     const populated = await OrderSchema.findById(created._id)
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as OrderDoc | null
+      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as PopulatedOrderDoc | null
 
     if (!populated) throw new Error('Failed to retrieve created order')
     return mapDocToOrder(populated)
@@ -87,7 +116,7 @@ export const MongoOrderModel: OrderModel = {
     if (!Types.ObjectId.isValid(id)) return null
     const doc = await OrderSchema.findById(id)
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as OrderDoc | null
+      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as PopulatedOrderDoc | null
     return doc ? mapDocToOrder(doc) : null
   },
 
@@ -102,7 +131,7 @@ export const MongoOrderModel: OrderModel = {
 
     const docs = await OrderSchema.find(query)
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as OrderDoc[]
+      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } })as unknown as PopulatedOrderDoc[]
 
     return docs.map(mapDocToOrder)
   },
@@ -112,7 +141,7 @@ export const MongoOrderModel: OrderModel = {
 
     // If items are being updated, adjust stock accordingly
     if (input.items) {
-      const current = await OrderSchema.findById(id) as OrderDoc | null
+      const current = await OrderSchema.findById(id) as PopulatedOrderDoc | null
       if (!current) return null
 
       // restore previous stock
@@ -138,14 +167,14 @@ export const MongoOrderModel: OrderModel = {
     const updateData = filterUndefined(input as Record<string, unknown>)
     const doc = await OrderSchema.findByIdAndUpdate(id, updateData as UpdateQuery<OrderDoc>, { new: true })
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as OrderDoc | null
+      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as PopulatedOrderDoc | null
 
     return doc ? mapDocToOrder(doc) : null
   },
 
   async delete (id) {
     if (!Types.ObjectId.isValid(id)) return false
-    const order = await OrderSchema.findById(id) as OrderDoc | null
+    const order = await OrderSchema.findById(id) as PopulatedOrderDoc | null
     if (!order) return false
 
     for (const it of order.items) {
@@ -158,7 +187,7 @@ export const MongoOrderModel: OrderModel = {
 
   async getByUser (userId) {
     const docs = await OrderSchema.find({ buyer: new Types.ObjectId(userId) })
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as OrderDoc[]
+      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } })as unknown as PopulatedOrderDoc[]
     return docs.map(mapDocToOrder)
   },
 
@@ -166,7 +195,7 @@ export const MongoOrderModel: OrderModel = {
     const sellerProducts = await Product.find({ owner: sellerId }).distinct('_id')
     const docs = await OrderSchema.find({ 'items.product': { $in: sellerProducts } })
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as OrderDoc[]
+      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } })as unknown as PopulatedOrderDoc[]
     return docs.map(mapDocToOrder)
   }
 }
