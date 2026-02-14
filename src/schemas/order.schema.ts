@@ -37,6 +37,14 @@ export type Order = {
   updatedAt: string
 }
 
+export const orderIdSchema = z.object({
+  id: z.string().min(1, { message: 'Order id is required' })
+})
+
+export const orderQuerySchema = z.object({
+  role: z.enum(['admin', 'seller', 'user']).optional(),
+  userId: z.string().optional()
+})
 
 export const validateCreateOrder = (input: unknown) => createOrderSchema.safeParse(input)
 export const validateUpdateOrder = (input: unknown) => updateOrderSchema.safeParse(input)
