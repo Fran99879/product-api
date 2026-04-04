@@ -20,7 +20,7 @@ export const createOrderController = ({ orderModel }: { orderModel: OrderModel }
   if (!order) throw new AppError('Order not found', 404)
   if (
     user.role === 'admin' ||
-    order.buyer === user.id ||
+    order.buyer.id === user.id ||
     order.items.some(item => item.product.owner === user.id)
   ) {
     return res.json(order)
@@ -28,9 +28,6 @@ export const createOrderController = ({ orderModel }: { orderModel: OrderModel }
 
   throw new AppError('Forbidden', 403)
 }
-
-
-
 
   const getMyOrders = async (req: Request, res: Response) => {
     if (!req.user) throw new AppError('Unauthorized', 401)
@@ -49,28 +46,58 @@ export const createOrderController = ({ orderModel }: { orderModel: OrderModel }
     res.status(201).json(created)
   }
 
-  const update = async (req: Request<{ id: string }>, res: Response) => {
-  const { id } = req.params
-  if ('status' in req.body && req.user!.role !== 'admin') {
-    throw new AppError('You cannot change order status', 403)
+ const cancel = async (req: Request<{ id: string }>, res: Response) => {
+  const updated = await orderModel.cancel(req.order!.id)
+
+  if (!updated) {
+    throw new AppError('Order not found', 404)
   }
-  const updated = await orderModel.update(id, req.body)
-  if (!updated) throw new AppError('Order not found', 404)
+
   return res.json(updated)
 }
 
-  const remove = async (req: Request<{ id: string }>, res: Response) => {
-    if (!req.user) throw new AppError('Unauthorized', 401)
-  const { id } = req.params as { id: string }
-    if (!id || typeof id !== 'string') throw new AppError('Invalid id', 400)     
-  const order = await orderModel.getById(id)
-    if (!order) throw new AppError('Order not found', 404)
-    if (order.buyer !== req.user.id) throw new AppError('You can only delete your own orders', 403)
-  const deleted = await orderModel.delete(id)
-    if (!deleted) throw new AppError('Failed to delete order', 400)
-      res.json({ message: 'Order deleted' })
-    }
+const updateStatus = async (req: Request<{ id: string }>, res: Response) => {
+  const { status } = req.body
+  const currentStatus = req.order!.status
 
-  return { getAll, getById, getMyOrders, getSellerOrders, create, update, remove }
+  const allowedTransitions: Record<string, string[]> = {
+    pending: ['paid', 'cancelled'],
+    paid: ['shipped', 'cancelled'],
+    shipped: [],
+    cancelled: []
+  }
+
+  const nextAllowed = allowedTransitions[currentStatus] ?? []
+
+  if (!nextAllowed.includes(status)) {
+    throw new AppError(
+      `Invalid status transition from ${currentStatus} to ${status}`,
+      400
+    )
+  }
+
+  const updated = await orderModel.update(req.order!.id, { status })
+
+  return res.json(updated)
+}
+
+const updateAddress = async (req: Request<{ id: string }>, res: Response) => {
+  const { address } = req.body
+
+  const updated = await orderModel.update(req.order!.id, { address })
+
+  return res.json(updated)
+}
+
+  return {
+  getAll,
+  getById,
+  getMyOrders,
+  getSellerOrders,
+  create,
+  cancel,
+  updateStatus,
+  updateAddress
+}
 }
   

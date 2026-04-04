@@ -3,7 +3,7 @@ import { Order as OrderSchema } from '../../../schemas/order.mongodb.js'
 import { Product } from '../../../schemas/product.mongodb.js'
 
 import type { OrderModel } from '../../order.model.js'
-import type { Order, CreateOrderInput, UpdateOrderInput } from '../../../schemas/order.schema.js'
+import type { Order } from '../../../schemas/order.schema.js'
 
 type OrderItemDoc = {
   product: Types.ObjectId
@@ -36,6 +36,7 @@ type PopulatedOrderItem = {
 }
 
 type PopulatedOrderDoc = Document & {
+  _id: Types.ObjectId
   buyer: Types.ObjectId
   items: PopulatedOrderItem[]
   total: number
@@ -44,10 +45,13 @@ type PopulatedOrderDoc = Document & {
   updatedAt: Date
 }
 
-
 const mapDocToOrder = (doc: PopulatedOrderDoc): Order => ({
   id: doc._id.toString(),
-  buyer: doc.buyer.toString(),
+  buyer: {
+  id: doc.buyer._id.toString(),
+  username: (doc.buyer as any).username,
+  email: (doc.buyer as any).email
+},
   items: doc.items.map(i => ({
     product: {
       id: i.product._id.toString(),
@@ -62,7 +66,6 @@ const mapDocToOrder = (doc: PopulatedOrderDoc): Order => ({
   updatedAt: doc.updatedAt.toISOString()
 })
 
-
 const filterUndefined = <T extends Record<string, unknown>>(obj: T) => {
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(obj)) {
@@ -72,130 +75,237 @@ const filterUndefined = <T extends Record<string, unknown>>(obj: T) => {
 }
 
 export const MongoOrderModel: OrderModel = {
-  async create (input) {
-    // Ensure products exist and capture price
-    const productIds = input.items.map(i => new Types.ObjectId(i.product))
+  async create(input) {
+    const session = await mongoose.startSession()
 
-    const products = await Product.find({ _id: { $in: productIds } }) as Array<Document & { _id: Types.ObjectId; price: number; quantity: number; name?: string }>
+    try {
+      session.startTransaction()
 
-    if (products.length !== input.items.length) {
-      throw new Error('One or more products not found')
+      const productIds = input.items.map(i => new Types.ObjectId(i.product))
+
+      const products = await Product.find({
+        _id: { $in: productIds }
+      }).session(session) as Array<
+        Document & {
+          _id: Types.ObjectId
+          price: number
+          quantity: number
+          name?: string
+        }
+      >
+
+      if (products.length !== input.items.length) {
+        throw new Error('One or more products not found')
+      }
+
+      const items: OrderItemDoc[] = input.items.map(i => {
+        const p = products.find(pp => pp._id.equals(i.product))!
+
+        if (p.quantity < i.quantity) {
+          throw new Error(
+            `Insufficient stock for product ${p.name || p._id.toString()}`
+          )
+        }
+
+        return {
+          product: new Types.ObjectId(i.product),
+          quantity: i.quantity,
+          price: p.price
+        }
+      })
+
+      const total = items.reduce(
+        (acc, it) => acc + it.price * it.quantity,
+        0
+      )
+
+      for (const it of items) {
+        await Product.findByIdAndUpdate(
+          it.product,
+          { $inc: { quantity: -it.quantity } },
+          { session }
+        )
+      }
+
+      const createdDocs = await OrderSchema.create(
+      [
+        {
+          buyer: new Types.ObjectId(input.buyer),
+          items,
+          total,
+          status: 'pending'
+        }
+      ],
+      { session }
+    )
+    const created = createdDocs[0]
+
+    if (!created) {
+      throw new Error('Order creation failed')
     }
 
-    // Build items with price and check stock
-    const items: OrderItemDoc[] = input.items.map(i => {
-      const p = products.find(pp => pp._id.equals(i.product))!
-      if (!p) throw new Error('Product not found')
-      if (p.quantity < i.quantity) throw new Error(`Insufficient stock for product ${p.name || p._id.toString()}`)
-      return { product: new Types.ObjectId(i.product), quantity: i.quantity, price: p.price }
-    })
+      await session.commitTransaction()
 
-    const total = items.reduce((acc, it) => acc + it.price * it.quantity, 0)
+      const populated = await OrderSchema.findById(created._id)
+        .populate('buyer', 'username email')
+        .populate({
+          path: 'items.product',
+          select: '-quantity',
+          populate: { path: 'owner', select: 'username' }
+        }) as PopulatedOrderDoc | null
 
-    const created = await OrderSchema.create({
-      buyer: new Types.ObjectId(input.buyer),
-      items,
-      total,
-      status: 'pending'
-    })as unknown as PopulatedOrderDoc
+      if (!populated) throw new Error('Failed to retrieve created order')
 
-    // Deduct stock
-    for (const it of items) {
-      await Product.findByIdAndUpdate(it.product, { $inc: { quantity: -it.quantity } })
+      return mapDocToOrder(populated)
+    } catch (error) {
+      await session.abortTransaction()
+      throw error
+    } finally {
+      session.endSession()
     }
-
-    const populated = await OrderSchema.findById(created._id)
-      .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as PopulatedOrderDoc | null
-
-    if (!populated) throw new Error('Failed to retrieve created order')
-    return mapDocToOrder(populated)
   },
 
-  async getById (id) {
+  async getById(id) {
     if (!Types.ObjectId.isValid(id)) return null
+
     const doc = await OrderSchema.findById(id)
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as PopulatedOrderDoc | null
+      .populate({
+        path: 'items.product',
+        select: '-quantity',
+        populate: { path: 'owner', select: 'username' }
+      }) as PopulatedOrderDoc | null
+
     return doc ? mapDocToOrder(doc) : null
   },
 
-  async getAll (params) {
+  async getAll(params) {
     const query: Record<string, unknown> = {}
+
     if (params?.role === 'seller' && params.userId) {
-      const sellerProducts = await Product.find({ owner: params.userId }).distinct('_id')
+      const sellerProducts = await Product.find({
+        owner: params.userId
+      }).distinct('_id')
+
       query['items.product'] = { $in: sellerProducts }
     } else if (params?.role === 'user' && params.userId) {
-      query['buyer'] = new Types.ObjectId(params.userId)
+      query.buyer = new Types.ObjectId(params.userId)
     }
 
     const docs = await OrderSchema.find(query)
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } })as unknown as PopulatedOrderDoc[]
+      .populate({
+        path: 'items.product',
+        select: '-quantity',
+        populate: { path: 'owner', select: 'username' }
+      }) as unknown as PopulatedOrderDoc[]
 
     return docs.map(mapDocToOrder)
   },
 
-  async update (id, input) {
+  async update(id, input) {
+
     if (!Types.ObjectId.isValid(id)) return null
-
-    // If items are being updated, adjust stock accordingly
-    if (input.items) {
-      const current = await OrderSchema.findById(id) as PopulatedOrderDoc | null
-      if (!current) return null
-
-      // restore previous stock
-      for (const it of current.items) {
-        await Product.findByIdAndUpdate(it.product, { $inc: { quantity: it.quantity } })
-      }
-
-      // validate new items
-      const productIds = input.items.map(i => new Types.ObjectId(i.product))
-      const products = await Product.find({ _id: { $in: productIds } }) as Array<Document & { _id: Types.ObjectId; quantity: number; price: number; name?: string }>
-
-      for (const it of input.items) {
-        const p = products.find(pp => pp._id.equals(it.product))
-        if (!p || p.quantity < it.quantity) throw new Error(`Insufficient stock for product ${p?.name || it.product}`)
-      }
-
-      // deduct stock for new items
-      for (const it of input.items) {
-        await Product.findByIdAndUpdate(it.product, { $inc: { quantity: -it.quantity } })
-      }
-    }
-
+    
     const updateData = filterUndefined(input as Record<string, unknown>)
-    const doc = await OrderSchema.findByIdAndUpdate(id, updateData as UpdateQuery<OrderDoc>, { new: true })
+
+    const doc = await OrderSchema.findByIdAndUpdate(
+      id,
+      {
+        ...updateData,
+        updatedAt: new Date()
+      } as UpdateQuery<OrderDoc>,
+      { new: true }
+    )
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } }) as PopulatedOrderDoc | null
+      .populate({
+        path: 'items.product',
+        select: '-quantity',
+        populate: { path: 'owner', select: 'username' }
+      }) as PopulatedOrderDoc | null
 
     return doc ? mapDocToOrder(doc) : null
   },
 
-  async delete (id) {
-    if (!Types.ObjectId.isValid(id)) return false
-    const order = await OrderSchema.findById(id) as PopulatedOrderDoc | null
-    if (!order) return false
+  async cancel(id) {
+    if (!Types.ObjectId.isValid(id)) return null
 
-    for (const it of order.items) {
-      await Product.findByIdAndUpdate(it.product, { $inc: { quantity: it.quantity } })
+    const session = await mongoose.startSession()
+
+    try {
+      session.startTransaction()
+
+      const order = await OrderSchema.findById(id)
+        .session(session) as PopulatedOrderDoc | null
+
+      if (!order) return null
+
+      if (order.status === 'pending') {
+        for (const it of order.items) {
+          await Product.findByIdAndUpdate(
+            it.product,
+            { $inc: { quantity: it.quantity } },
+            { session }
+          )
+        }
+      }
+
+      order.status = 'cancelled'
+      order.updatedAt = new Date()
+
+      await order.save({ session })
+
+      await session.commitTransaction()
+
+      const populated = await OrderSchema.findById(id)
+        .populate('buyer', '-role')
+        .populate({
+          path: 'items.product',
+          select: '-quantity',
+          populate: { path: 'owner', select: 'username' }
+        }) as PopulatedOrderDoc | null
+
+      return populated ? mapDocToOrder(populated) : null
+    } catch (error) {
+      await session.abortTransaction()
+      throw error
+    } finally {
+      session.endSession()
     }
-
-    const result = await OrderSchema.findByIdAndDelete(id)
-    return result !== null
   },
 
-  async getByUser (userId) {
-    const docs = await OrderSchema.find({ buyer: new Types.ObjectId(userId) })
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } })as unknown as PopulatedOrderDoc[]
+  async delete() {
+    return false
+  },
+
+  async getByUser(userId) {
+    const docs = await OrderSchema.find({
+      buyer: new Types.ObjectId(userId)
+    })
+      .populate({
+        path: 'items.product',
+        select: '-quantity',
+        populate: { path: 'owner', select: 'username' }
+      }) as unknown as PopulatedOrderDoc[]
+
     return docs.map(mapDocToOrder)
   },
 
-  async getSellerOrders (sellerId) {
-    const sellerProducts = await Product.find({ owner: sellerId }).distinct('_id')
-    const docs = await OrderSchema.find({ 'items.product': { $in: sellerProducts } })
+  async getSellerOrders(sellerId) {
+    const sellerProducts = await Product.find({
+      owner: sellerId
+    }).distinct('_id')
+
+    const docs = await OrderSchema.find({
+      'items.product': { $in: sellerProducts }
+    })
       .populate('buyer', '-role')
-      .populate({ path: 'items.product', select: '-quantity', populate: { path: 'owner', select: 'username' } })as unknown as PopulatedOrderDoc[]
+      .populate({
+        path: 'items.product',
+        select: '-quantity',
+        populate: { path: 'owner', select: 'username' }
+      }) as unknown as PopulatedOrderDoc[]
+
     return docs.map(mapDocToOrder)
   }
 }

@@ -19,7 +19,16 @@ export const validateSchema =
       })
     }
 
-    req[part] = result.data as any
+    if (typeof req[part] === 'object' && req[part] !== null) {
+      Object.keys(req[part]).forEach(key => {
+        delete (req[part] as Record<string, unknown>)[key]
+      })
+
+      Object.assign(
+        req[part] as Record<string, unknown>,
+        result.data as Record<string, unknown>
+      )
+    }
 
     next()
   }

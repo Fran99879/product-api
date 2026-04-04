@@ -9,14 +9,21 @@ export const createOrderSchema = z.object({
   items: z.array(orderItemSchema).min(1, { message: 'At least one item is required' })
 })
 
-export const updateOrderSchema = z.object({
-  status: z.enum(['pending', 'paid', 'shipped', 'cancelled']).optional(),
-  items: z.array(orderItemSchema).optional()
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(['pending', 'paid', 'shipped', 'cancelled'])
 })
+
+export const updateOrderAddressSchema = z.object({
+  address: z.string().min(5, { message: 'Address is required' })
+})
+
+export const cancelOrderSchema = z.object({}).optional()
 
 export type OrderItemInput = z.infer<typeof orderItemSchema>
 export type CreateOrderInput = z.infer<typeof createOrderSchema> & { buyer: string }
-export type UpdateOrderInput = z.infer<typeof updateOrderSchema>
+export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>
+export type UpdateOrderAddressInput = z.infer<typeof updateOrderAddressSchema>
+export type CancelOrderInput = z.infer<typeof cancelOrderSchema>
 
 export type OrderItem = {
   product: {
@@ -29,7 +36,11 @@ export type OrderItem = {
 
 export type Order = {
   id: string
-  buyer: string
+  buyer: { 
+    id: string,
+    username: string,
+    email: string
+  }
   items: OrderItem[]
   total: number
   status: 'pending' | 'paid' | 'shipped' | 'cancelled'
@@ -47,4 +58,4 @@ export const orderQuerySchema = z.object({
 })
 
 export const validateCreateOrder = (input: unknown) => createOrderSchema.safeParse(input)
-export const validateUpdateOrder = (input: unknown) => updateOrderSchema.safeParse(input)
+export const validateUpdateOrderStatus = (input: unknown) => updateOrderStatusSchema.safeParse(input)
