@@ -1,6 +1,5 @@
 import express, { json, type Application } from 'express'
 import morgan from 'morgan'
-import cookieParser from 'cookie-parser'
 
 import { corsMiddleware } from './middlewares/cors.js'
 import { createProductRouter } from './routes/product.route.js'
@@ -17,16 +16,18 @@ interface CreateAppDependencies {
   orderModel: OrderModel
 }
 
-export const createApp = ({ productModel, orderModel }: CreateAppDependencies): Application => {
+export const createApp = ({
+  productModel,
+  orderModel
+}: CreateAppDependencies): Application => {
   const app = express()
-  
+
   app.use(morgan('dev'))
   app.use(corsMiddleware())
   app.use(json())
-  app.use(cookieParser(process.env.TOKEN_SECRET))
-  
+
   app.disable('x-powered-by')
-  
+
   app.use('/orders', createOrderRouter({ orderModel }))
   app.use('/user', authRoutes)
   app.use('/admin', adminRouter)

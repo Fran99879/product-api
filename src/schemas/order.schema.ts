@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { orderStatusSchema } from './order.js'
 
 export const orderItemSchema = z.object({
   product: z.string().min(1, { message: 'Product id is required' }),
@@ -10,7 +11,7 @@ export const createOrderSchema = z.object({
 })
 
 export const updateOrderStatusSchema = z.object({
-  status: z.enum(['pending', 'paid', 'shipped', 'cancelled'])
+  status: orderStatusSchema
 })
 
 export const updateOrderAddressSchema = z.object({
@@ -43,7 +44,7 @@ export type Order = {
   }
   items: OrderItem[]
   total: number
-  status: 'pending' | 'paid' | 'shipped' | 'cancelled'
+  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
   createdAt: string
   updatedAt: string
 }

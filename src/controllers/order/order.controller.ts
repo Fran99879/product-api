@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express'
 import type { OrderModel } from '../../models/order.model.js'
 import { AppError } from '../../errors/appError.js'
+import { updateOrderStatusSchema } from '../../schemas/order.schema.js'
 
 export const createOrderController = ({ orderModel }: { orderModel: OrderModel }) => {
   const getAll = async (req: Request, res: Response) => {
@@ -56,27 +57,26 @@ export const createOrderController = ({ orderModel }: { orderModel: OrderModel }
   return res.json(updated)
 }
 
-const updateStatus = async (req: Request<{ id: string }>, res: Response) => {
-  const { status } = req.body
-  const currentStatus = req.order!.status
+const updateStatus = async (
+  req: Request<{ id: string }>,
+  res: Response
+) => {
+  const result = updateOrderStatusSchema.safeParse(req.body)
 
-  const allowedTransitions: Record<string, string[]> = {
-    pending: ['paid', 'cancelled'],
-    paid: ['shipped', 'cancelled'],
-    shipped: [],
-    cancelled: []
+  if (!result.success) {
+    throw new AppError('Invalid status', 400)
   }
 
-  const nextAllowed = allowedTransitions[currentStatus] ?? []
+  const { status } = result.data
 
-  if (!nextAllowed.includes(status)) {
-    throw new AppError(
-      `Invalid status transition from ${currentStatus} to ${status}`,
-      400
-    )
+  const updated = await orderModel.updateStatus(
+    req.order!.id,
+    status
+  )
+
+  if (!updated) {
+    throw new AppError('Order not found', 404)
   }
-
-  const updated = await orderModel.update(req.order!.id, { status })
 
   return res.json(updated)
 }

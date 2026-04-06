@@ -1,15 +1,21 @@
 import type { Request, Response, NextFunction } from 'express'
-import jwt from 'jsonwebtoken'
-import type { VerifyErrors, JwtPayload } from 'jsonwebtoken'
-import { ENV } from '../config/env.js'
 import type { JwtPayloadUser } from '../types/auth.ts'
+import { verifyAccessToken } from '../utils/jwt.js'
 
 export const authRequired = (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const token = req.cookies?.token
+  const authHeader = req.headers.authorization
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({
+      message: 'No token, authorization denied'
+    })
+  }
+
+  const [, token] = authHeader.split(' ')
 
   if (!token) {
     return res.status(401).json({
@@ -17,24 +23,20 @@ export const authRequired = (
     })
   }
 
-  jwt.verify(
-    token,
-    ENV.TOKEN_SECRET,
-    (err: VerifyErrors | null, decoded: JwtPayload | string | undefined) => {
-      if (err) {
-        return res.status(403).json({
-          message: 'Invalid token'
-        })
-      }
+  try {
+    const decoded = verifyAccessToken(token)
 
-      if (!decoded || typeof decoded === 'string') {
-        return res.status(403).json({
-          message: 'Invalid token payload'
-        })
-      }
-
-      req.user = decoded as JwtPayloadUser
-      next()
+    if (!decoded || typeof decoded === 'string') {
+      return res.status(403).json({
+        message: 'Invalid token payload'
+      })
     }
-  )
+
+    req.user = decoded as JwtPayloadUser
+    next()
+  } catch {
+    return res.status(403).json({
+      message: 'Invalid token'
+    })
+  }
 }

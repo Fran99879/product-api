@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import { ORDER_STATUS } from '../types/order.js'
+
+export const orderStatusSchema = z.enum(ORDER_STATUS)
 
 export const orderItemSchema = z.object({
   product: z.string().min(1, { message: 'Product ID is required' }),
@@ -76,6 +79,7 @@ export const validateUpdateOrder = (input: unknown) => {
     data: result.data
   }
 }
+
 
 export function isUpdateOrderDTO(input: unknown): input is UpdateOrderDTO {
   return orderUpdateSchema.safeParse(input).success

@@ -17,11 +17,14 @@ export const corsMiddleware = (
       if (!origin) {
         return callback(null, true)
       }
+
       if (acceptedOrigin.includes(origin)) {
         return callback(null, true)
       }
+
       return callback(new Error('Not allowed by CORS'))
-    }
+    },
+    allowedHeaders: ['Content-Type', 'Authorization']
   }
 
   return cors(options)

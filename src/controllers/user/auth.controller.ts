@@ -33,14 +33,15 @@ export const createAuthController = (userModel: UserModel) => {
         role: userSaved.role
       })
 
-      res.cookie('token', token, { httpOnly: true })
-
-      res.status(201).json({
-        id: userSaved.id,
-        username: userSaved.username,
-        email: userSaved.email,
-        role: userSaved.role,
-        createdAt: userSaved.createdAt
+      return res.status(201).json({
+        token,
+        user: {
+          id: userSaved.id,
+          username: userSaved.username,
+          email: userSaved.email,
+          role: userSaved.role,
+          createdAt: userSaved.createdAt
+        }
       })
 
     } catch {
@@ -75,13 +76,14 @@ export const createAuthController = (userModel: UserModel) => {
         role: userFound.role
       })
 
-      res.cookie('token', token, { httpOnly: true })
-
-      res.json({
-        id: userFound.id,
-        username: userFound.username,
-        email: userFound.email,
-        role: userFound.role
+      return res.status(200).json({
+        token,
+          user: {
+            id: userFound.id,
+            username: userFound.username,
+            email: userFound.email,
+            role: userFound.role
+          }
       })
 
     } catch {
@@ -90,13 +92,8 @@ export const createAuthController = (userModel: UserModel) => {
   }
 
   const logout = (_req: Request, res: Response) => {
-    res.cookie('token', '', {
-      expires: new Date(0),
-      httpOnly: true
-    })
-
-    return res.json({ message: 'Session closed' })
-  }
+  return res.json({ message: 'Session closed' })
+}
 
   const profile = async (req: Request, res: Response) => {
   if (!req.user) {

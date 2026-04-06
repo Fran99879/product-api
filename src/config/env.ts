@@ -12,10 +12,6 @@ function requireEnv(variable: string): string {
 
 export const ENV = {
   PORT: Number(process.env.PORT ?? 3000),
-
-  DB_TYPE: requireEnv('DB_TYPE') as 'mongo' | 'mysql' | 'local',
-
-  MONGO_URI: process.env.MONGO_URI ?? '',
-
+  MONGO_URI: requireEnv('MONGO_URI'),
   TOKEN_SECRET: requireEnv('TOKEN_SECRET')
 }

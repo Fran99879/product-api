@@ -1,11 +1,9 @@
-mongod=prender servidor
-
-mongosh=interfaz interactiva de javaScript
-
-pnpm run dev
+1 mongod --dbpath "C:\data\db" --replSet rs0
+2 mongosh
+3 pnpm run dev
 
 Contraseña alazar
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
-Arquitectura Actual
-Estructura de Carpetas
+test flujo de pedidos
+buyer crea pedido -> seller lo cobra -> seller lo envía -> seller lo entrega
