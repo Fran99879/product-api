@@ -49,7 +49,7 @@ export const canCancelOrder = (orderModel: OrderModel) => {
       return res.status(404).json({ message: 'Order not found' })
     }
 
-    if (order.buyer !== user.id && user.role !== 'admin') {
+    if (order.buyer.toString() !== user.id && user.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden' })
     }
 
@@ -74,10 +74,10 @@ export const canUpdateOrderAddress = (orderModel: OrderModel) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' })
     }
-
-    if (order.buyer !== user.id && user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden' })
-    }
+    
+    if (order.buyer.toString() !== user.id && user.role !== 'admin') {
+  return res.status(403).json({ message: 'Forbidden' })
+}
 
     req.order = order
     next()
