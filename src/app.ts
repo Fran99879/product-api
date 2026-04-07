@@ -6,6 +6,7 @@ import { createProductRouter } from './routes/product.route.js'
 import authRoutes from './routes/auth.route.js'
 import { createOrderRouter } from './routes/order.route.js'
 import adminRouter from './routes/admin.route.js'
+import healthRoutes from './routes/health.routes.js'
 import type { ProductModel } from './models/product.model.js'
 import type { OrderModel } from './models/order.model.js'
 import { notFound } from './middlewares/notFound.middleware.js'
@@ -28,6 +29,7 @@ export const createApp = ({
 
   app.disable('x-powered-by')
 
+  app.use('/health', healthRoutes)
   app.use('/orders', createOrderRouter({ orderModel }))
   app.use('/user', authRoutes)
   app.use('/admin', adminRouter)

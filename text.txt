@@ -5,5 +5,32 @@
 Contraseña alazar
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
-test flujo de pedidos
+test flujo de orders
 buyer crea pedido -> seller lo cobra -> seller lo envía -> seller lo entrega
+
+------- Comandos de docker --------
+
+Construir y levantar= desarrollo local
+docker compose up --build
+
+
+Ver logs del backend=
+docker compose logs -f backend
+
+
+Ver contenedores activos=
+docker ps
+
+
+Para apagar=
+docker compose down
+
+
+borrar TODO=
+docker compose down -v
+
+Crea la imagen= “fabricame la caja con mi app adentro”
+docker build -t product-api .
+
+Ejecuta una imagen ya creada= “levantá un container usando la caja que fabriqué”
+docker run -p 3000:3000 --env-file .env product-api
