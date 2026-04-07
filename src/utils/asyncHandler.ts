@@ -8,6 +8,6 @@ type AsyncController<Req extends Request = Request> = (
 
 export const asyncHandler =
   <Req extends Request = Request>(fn: AsyncController<Req>) =>
-  (req: Req, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next)
+  (req: Req, res: Response, next: NextFunction): void => {
+    void Promise.resolve(fn(req, res, next)).catch(next)
   }

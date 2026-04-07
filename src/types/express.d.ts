@@ -8,6 +8,7 @@ declare global {
       user?: JwtPayloadUser
       product?: Product
       order?: Order
+      requestId?: string
     }
   }
 }

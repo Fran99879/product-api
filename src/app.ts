@@ -11,6 +11,8 @@ import type { ProductModel } from './models/product.model.js'
 import type { OrderModel } from './models/order.model.js'
 import { notFound } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/error.middleware.js'
+import { requestId } from './middlewares/requestId.js'
+import { errorHandler } from './middlewares/errorHandler.js'
 
 interface CreateAppDependencies {
   productModel: ProductModel
@@ -24,6 +26,8 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   app.use(corsMiddleware())
   app.use(json())
 
+  app.use(requestId)
+
   app.disable('x-powered-by')
 
   app.use('/health', healthRoutes)
@@ -31,7 +35,9 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   app.use('/user', authRoutes)
   app.use('/admin', adminRouter)
   app.use('/products', createProductRouter({ productModel }))
+
   app.use(notFound)
+
   app.use(globalErrorHandler)
 
   return app
