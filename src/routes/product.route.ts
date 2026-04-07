@@ -9,22 +9,16 @@ import {
   productSchema,
   productUpdateSchema,
   productQuerySchema,
-  productIdSchema
+  productIdSchema,
 } from '../schemas/product.js'
 
 import type { ProductModel } from '../models/product.model.js'
 
-export const createProductRouter = (
-  { productModel }: { productModel: ProductModel }
-) => {
+export const createProductRouter = ({ productModel }: { productModel: ProductModel }) => {
   const productRouter = Router()
   const productController = new ProductController(productModel)
 
-  productRouter.get(
-    '/',
-    validateSchema(productQuerySchema, 'query'),
-    productController.getAll
-  )
+  productRouter.get('/', validateSchema(productQuerySchema, 'query'), productController.getAll)
 
   productRouter.get(
     '/my-products',
@@ -41,11 +35,7 @@ export const createProductRouter = (
     productController.create
   )
 
-  productRouter.get(
-    '/:id',
-    validateSchema(productIdSchema, 'params'),
-    productController.getById
-  )
+  productRouter.get('/:id', validateSchema(productIdSchema, 'params'), productController.getById)
 
   productRouter.patch(
     '/:id',

@@ -21,6 +21,6 @@ export const createModels = async (): Promise<Models> => {
 
   return {
     productModel: MongoProductModel,
-    orderModel: MongoOrderModel
+    orderModel: MongoOrderModel,
   }
 }

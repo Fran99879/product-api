@@ -3,19 +3,19 @@ import { orderStatusSchema } from './order.js'
 
 export const orderItemSchema = z.object({
   product: z.string().min(1, { message: 'Product id is required' }),
-  quantity: z.number().int().positive({ message: 'Quantity must be a positive integer' })
+  quantity: z.number().int().positive({ message: 'Quantity must be a positive integer' }),
 })
 
 export const createOrderSchema = z.object({
-  items: z.array(orderItemSchema).min(1, { message: 'At least one item is required' })
+  items: z.array(orderItemSchema).min(1, { message: 'At least one item is required' }),
 })
 
 export const updateOrderStatusSchema = z.object({
-  status: orderStatusSchema
+  status: orderStatusSchema,
 })
 
 export const updateOrderAddressSchema = z.object({
-  address: z.string().min(5, { message: 'Address is required' })
+  address: z.string().min(5, { message: 'Address is required' }),
 })
 
 export const cancelOrderSchema = z.object({}).optional()
@@ -37,9 +37,9 @@ export type OrderItem = {
 
 export type Order = {
   id: string
-  buyer: { 
-    id: string,
-    username: string,
+  buyer: {
+    id: string
+    username: string
     email: string
   }
   items: OrderItem[]
@@ -50,13 +50,14 @@ export type Order = {
 }
 
 export const orderIdSchema = z.object({
-  id: z.string().min(1, { message: 'Order id is required' })
+  id: z.string().min(1, { message: 'Order id is required' }),
 })
 
 export const orderQuerySchema = z.object({
   role: z.enum(['admin', 'seller', 'user']).optional(),
-  userId: z.string().optional()
+  userId: z.string().optional(),
 })
 
 export const validateCreateOrder = (input: unknown) => createOrderSchema.safeParse(input)
-export const validateUpdateOrderStatus = (input: unknown) => updateOrderStatusSchema.safeParse(input)
+export const validateUpdateOrderStatus = (input: unknown) =>
+  updateOrderStatusSchema.safeParse(input)

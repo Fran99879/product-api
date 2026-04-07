@@ -17,10 +17,7 @@ interface CreateAppDependencies {
   orderModel: OrderModel
 }
 
-export const createApp = ({
-  productModel,
-  orderModel
-}: CreateAppDependencies): Application => {
+export const createApp = ({ productModel, orderModel }: CreateAppDependencies): Application => {
   const app = express()
 
   app.use(morgan('dev'))

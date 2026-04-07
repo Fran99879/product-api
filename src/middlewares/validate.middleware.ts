@@ -12,22 +12,19 @@ export const validateSchema =
 
     if (!result.success) {
       return res.status(400).json({
-        errors: result.error.issues.map(issue => ({
+        errors: result.error.issues.map((issue) => ({
           field: issue.path.join('.'),
-          message: issue.message
-        }))
+          message: issue.message,
+        })),
       })
     }
 
     if (typeof req[part] === 'object' && req[part] !== null) {
-      Object.keys(req[part]).forEach(key => {
+      Object.keys(req[part]).forEach((key) => {
         delete (req[part] as Record<string, unknown>)[key]
       })
 
-      Object.assign(
-        req[part] as Record<string, unknown>,
-        result.data as Record<string, unknown>
-      )
+      Object.assign(req[part] as Record<string, unknown>, result.data as Record<string, unknown>)
     }
 
     next()

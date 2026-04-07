@@ -5,11 +5,7 @@ import type { Product } from '../schemas/product.js'
 import type { Order } from '../schemas/order.schema.js'
 
 export const canEditProduct = (productModel: ProductModel) => {
-  return async (
-    req: Request<{ id: string }>,
-    res: Response,
-    next: NextFunction
-  ) => {
+  return async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
     const { id } = req.params
     const user = req.user
 
@@ -33,11 +29,7 @@ export const canEditProduct = (productModel: ProductModel) => {
 }
 
 export const canCancelOrder = (orderModel: OrderModel) => {
-  return async (
-    req: Request<{ id: string }>,
-    res: Response,
-    next: NextFunction
-  ) => {
+  return async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
     const user = req.user
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized' })
@@ -59,11 +51,7 @@ export const canCancelOrder = (orderModel: OrderModel) => {
 }
 
 export const canUpdateOrderAddress = (orderModel: OrderModel) => {
-  return async (
-    req: Request<{ id: string }>,
-    res: Response,
-    next: NextFunction
-  ) => {
+  return async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
     const user = req.user
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized' })
@@ -74,10 +62,10 @@ export const canUpdateOrderAddress = (orderModel: OrderModel) => {
     if (!order) {
       return res.status(404).json({ message: 'Order not found' })
     }
-    
+
     if (order.buyer.toString() !== user.id && user.role !== 'admin') {
-  return res.status(403).json({ message: 'Forbidden' })
-}
+      return res.status(403).json({ message: 'Forbidden' })
+    }
 
     req.order = order
     next()
@@ -85,11 +73,7 @@ export const canUpdateOrderAddress = (orderModel: OrderModel) => {
 }
 
 export const canUpdateOrderStatus = (orderModel: OrderModel) => {
-  return async (
-    req: Request<{ id: string }>,
-    res: Response,
-    next: NextFunction
-  ) => {
+  return async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
     const user = req.user
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized' })
@@ -101,9 +85,7 @@ export const canUpdateOrderStatus = (orderModel: OrderModel) => {
       return res.status(404).json({ message: 'Order not found' })
     }
 
-    const isSeller = order.items.some(
-      item => item.product.owner === user.id
-    )
+    const isSeller = order.items.some((item) => item.product.owner === user.id)
 
     if (!isSeller && user.role !== 'admin') {
       return res.status(403).json({ message: 'Forbidden' })

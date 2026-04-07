@@ -4,7 +4,7 @@ import { ENV } from '../env.js'
 export async function connectMongo() {
   try {
     await mongoose.connect(ENV.MONGO_URI, {
-      maxPoolSize: 10
+      maxPoolSize: 10,
     })
 
     console.log('MongoDB connected')

@@ -1,17 +1,15 @@
 import cors from 'cors'
 import type { CorsOptions } from 'cors'
 
-const ACCEPTED_ORIGINS = [
-  'http://localhost:8080'
-]
+const ACCEPTED_ORIGINS = ['http://localhost:8080']
 
 interface CorsMiddlewareOptions {
   acceptedOrigin?: string[]
 }
 
-export const corsMiddleware = (
-  { acceptedOrigin = ACCEPTED_ORIGINS }: CorsMiddlewareOptions = {}
-) => {
+export const corsMiddleware = ({
+  acceptedOrigin = ACCEPTED_ORIGINS,
+}: CorsMiddlewareOptions = {}) => {
   const options: CorsOptions = {
     origin: (origin, callback) => {
       if (!origin) {
@@ -24,7 +22,7 @@ export const corsMiddleware = (
 
       return callback(new Error('Not allowed by CORS'))
     },
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
   }
 
   return cors(options)

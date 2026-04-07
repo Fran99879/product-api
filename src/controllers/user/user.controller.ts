@@ -1,13 +1,9 @@
 import type { Request, Response } from 'express'
 import type { UserModel } from '../../models/user.model.js'
-import {
-  validateChangeUserRoleParams,
-  validateChangeUserRoleBody
-} from '../../schemas/user.js'
+import { validateChangeUserRoleParams, validateChangeUserRoleBody } from '../../schemas/user.js'
 import { assertUser } from '../../utils/assertUser.js'
 
 export const createUserController = (userModel: UserModel) => {
-
   const updateUserRole = async (req: Request, res: Response) => {
     assertUser(req)
 
@@ -36,7 +32,7 @@ export const createUserController = (userModel: UserModel) => {
       id: updatedUser.id,
       username: updatedUser.username,
       email: updatedUser.email,
-      role: updatedUser.role
+      role: updatedUser.role,
     })
   }
 

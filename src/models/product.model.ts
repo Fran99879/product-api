@@ -9,10 +9,7 @@ export interface ProductModel {
 
   create(params: { input: ProductInput }): Promise<Product>
 
-  update(params: {
-    id: string
-    input: ProductUpdate
-  }): Promise<Product | null>
+  update(params: { id: string; input: ProductUpdate }): Promise<Product | null>
 
   delete(params: { id: string }): Promise<boolean>
 }

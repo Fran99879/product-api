@@ -14,10 +14,7 @@ export interface UserModel {
     }
   }): Promise<User>
 
-  updateRole(params: {
-    id: string
-    role: UserRole
-  }): Promise<User | null>
+  updateRole(params: { id: string; role: UserRole }): Promise<User | null>
 
   getAll(): Promise<User[]>
 }

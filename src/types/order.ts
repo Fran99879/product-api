@@ -1,10 +1,4 @@
-export const ORDER_STATUS = [
-  'pending',
-  'paid',
-  'shipped',
-  'delivered',
-  'cancelled'
-] as const
+export const ORDER_STATUS = ['pending', 'paid', 'shipped', 'delivered', 'cancelled'] as const
 
 export type OrderStatus = (typeof ORDER_STATUS)[number]
 
@@ -13,12 +7,9 @@ export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   paid: ['shipped', 'cancelled'],
   shipped: ['delivered'],
   delivered: [],
-  cancelled: []
+  cancelled: [],
 }
 
-export function canTransitionOrderStatus(
-  current: OrderStatus,
-  next: OrderStatus
-): boolean {
+export function canTransitionOrderStatus(current: OrderStatus, next: OrderStatus): boolean {
   return ORDER_STATUS_TRANSITIONS[current].includes(next)
 }

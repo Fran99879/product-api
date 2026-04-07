@@ -9,7 +9,7 @@ export class ProductController {
   getAll = async (req: Request, res: Response) => {
     const { brand } = req.query
     const products = await this.productModel.getAll({
-      brand: brand as string | undefined
+      brand: brand as string | undefined,
     })
     res.json(products)
   }
@@ -23,7 +23,7 @@ export class ProductController {
   create = async (req: Request, res: Response) => {
     if (!req.user) throw new AppError('Unauthorized', 401)
     const newProduct = await this.productModel.create({
-      input: { ...req.body, owner: req.user.id }
+      input: { ...req.body, owner: req.user.id },
     })
     res.status(201).json(newProduct)
   }
@@ -37,7 +37,7 @@ export class ProductController {
   update = asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
     const updated = await this.productModel.update({
       id: req.params.id,
-      input: req.body
+      input: req.body,
     })
     if (!updated) throw new AppError('Product not found', 404)
     res.json(updated)
@@ -49,4 +49,3 @@ export class ProductController {
     res.json({ message: 'Product deleted' })
   }
 }
- 

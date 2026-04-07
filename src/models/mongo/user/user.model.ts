@@ -11,40 +11,36 @@ const mapDocToUser = (doc: any): User => ({
   password: doc.password,
   role: doc.role,
   createdAt: doc.createdAt,
-  updatedAt: doc.updatedAt
+  updatedAt: doc.updatedAt,
 })
 
 export const MongoUserModel: UserModel = {
-  async findByEmail ({ email }) {
+  async findByEmail({ email }) {
     const doc = await UserMongo.findOne({ email })
     return doc ? mapDocToUser(doc) : null
   },
 
-  async findById ({ id }) {
+  async findById({ id }) {
     if (!mongoose.Types.ObjectId.isValid(id)) return null
     const doc = await UserMongo.findById(id)
     return doc ? mapDocToUser(doc) : null
   },
 
-  async create ({ input }) {
+  async create({ input }) {
     const doc = await UserMongo.create(input)
     return mapDocToUser(doc)
   },
 
-  async updateRole ({ id, role }) {
+  async updateRole({ id, role }) {
     if (!mongoose.Types.ObjectId.isValid(id)) return null
 
-    const doc = await UserMongo.findByIdAndUpdate(
-      id,
-      { role },
-      { new: true }
-    )
+    const doc = await UserMongo.findByIdAndUpdate(id, { role }, { new: true })
 
     return doc ? mapDocToUser(doc) : null
   },
 
-  async getAll () {
+  async getAll() {
     const docs = await UserMongo.find()
     return docs.map(mapDocToUser)
-  }
+  },
 }

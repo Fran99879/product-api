@@ -13,43 +13,39 @@ const mapDocToProduct = (doc: any): Product => ({
   brand: doc.brand,
   rate: doc.rate,
   owner: doc.owner,
-  quantity: doc.quantity
+  quantity: doc.quantity,
 })
 
 // Filtrar campos undefined para actualizar de forma segura
 const filterUndefined = (obj: Record<string, unknown>): Record<string, unknown> => {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([, value]) => value !== undefined)
-  )
+  return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined))
 }
 
 export const MongoProductModel: ProductModel = {
-  async getAll ({ brand }: { brand?: string }) {
-    const query = brand
-      ? { brand: { $regex: brand, $options: 'i' } }
-      : {}
+  async getAll({ brand }: { brand?: string }) {
+    const query = brand ? { brand: { $regex: brand, $options: 'i' } } : {}
 
     const docs = await ProductSchema.find(query)
     return docs.map(mapDocToProduct)
   },
 
-  async getByOwner ({ owner }: { owner: string }) {
+  async getByOwner({ owner }: { owner: string }) {
     const docs = await ProductSchema.find({ owner })
     return docs.map(mapDocToProduct)
   },
 
-  async getById ({ id }: { id: string }) {
+  async getById({ id }: { id: string }) {
     if (!mongoose.Types.ObjectId.isValid(id)) return null
     const doc = await ProductSchema.findById(id)
     return doc ? mapDocToProduct(doc) : null
   },
 
-  async create ({ input }: { input: ProductInput }) {
+  async create({ input }: { input: ProductInput }) {
     const doc = await ProductSchema.create(input)
     return mapDocToProduct(doc)
   },
 
-  async update ({ id, input }: { id: string; input: ProductUpdate }) {
+  async update({ id, input }: { id: string; input: ProductUpdate }) {
     if (!mongoose.Types.ObjectId.isValid(id)) return null
 
     const updateData = filterUndefined(input as Record<string, unknown>)
@@ -57,9 +53,9 @@ export const MongoProductModel: ProductModel = {
     return doc ? mapDocToProduct(doc) : null
   },
 
-  async delete ({ id }: { id: string }) {
+  async delete({ id }: { id: string }) {
     if (!mongoose.Types.ObjectId.isValid(id)) return false
     const result = await ProductSchema.findByIdAndDelete(id)
     return result !== null
-  }
+  },
 }

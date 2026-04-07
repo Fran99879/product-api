@@ -13,5 +13,5 @@ function requireEnv(variable: string): string {
 export const ENV = {
   PORT: Number(process.env.PORT ?? 3000),
   MONGO_URI: requireEnv('MONGO_URI'),
-  TOKEN_SECRET: requireEnv('TOKEN_SECRET')
+  TOKEN_SECRET: requireEnv('TOKEN_SECRET'),
 }

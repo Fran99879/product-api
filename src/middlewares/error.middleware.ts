@@ -2,12 +2,7 @@ import type { ErrorRequestHandler } from 'express'
 import { ZodError } from 'zod'
 import { AppError } from '../errors/appError.js'
 
-export const globalErrorHandler: ErrorRequestHandler = (
-  err,
-  _req,
-  res,
-  _next
-) => {
+export const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   // default values
   let statusCode = 500
   let message = 'Internal Server Error'
@@ -34,8 +29,7 @@ export const globalErrorHandler: ErrorRequestHandler = (
   const isDev = process.env.NODE_ENV === 'development'
 
   res.status(statusCode).json({
-  message,
-  ...(errors ? { errors } : {})
-});
-
+    message,
+    ...(errors ? { errors } : {}),
+  })
 }

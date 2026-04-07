@@ -2,16 +2,12 @@ import type { Request, Response, NextFunction } from 'express'
 import type { JwtPayloadUser } from '../types/auth.ts'
 import { verifyAccessToken } from '../utils/jwt.js'
 
-export const authRequired = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const authRequired = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization
 
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({
-      message: 'No token, authorization denied'
+      message: 'No token, authorization denied',
     })
   }
 
@@ -19,7 +15,7 @@ export const authRequired = (
 
   if (!token) {
     return res.status(401).json({
-      message: 'No token, authorization denied'
+      message: 'No token, authorization denied',
     })
   }
 
@@ -28,7 +24,7 @@ export const authRequired = (
 
     if (!decoded || typeof decoded === 'string') {
       return res.status(403).json({
-        message: 'Invalid token payload'
+        message: 'Invalid token payload',
       })
     }
 
@@ -36,7 +32,7 @@ export const authRequired = (
     next()
   } catch {
     return res.status(403).json({
-      message: 'Invalid token'
+      message: 'Invalid token',
     })
   }
 }
