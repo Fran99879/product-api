@@ -1,7 +1,7 @@
 import cors from 'cors'
 import type { CorsOptions } from 'cors'
 
-const ACCEPTED_ORIGINS = ['http://localhost:8080']
+const ACCEPTED_ORIGINS = ['http://localhost:3001']
 
 interface CorsMiddlewareOptions {
   acceptedOrigin?: string[]

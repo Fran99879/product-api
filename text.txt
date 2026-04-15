@@ -8,6 +8,8 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 test flujo de orders
 buyer crea pedido -> seller lo cobra -> seller lo envía -> seller lo entrega
 
+
+?replicaSet=rs0
 ------- Comandos de docker --------
 
 Construir y levantar= desarrollo local

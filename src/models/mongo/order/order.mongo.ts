@@ -76,7 +76,6 @@ export const MongoOrderModel: OrderModel = {
       if (!created) {
         throw new Error('Order creation failed')
       }
-
       await session.commitTransaction()
 
       const populated = (await OrderSchema.findById(created._id)
