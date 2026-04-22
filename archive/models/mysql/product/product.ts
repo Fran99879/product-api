@@ -1,19 +1,14 @@
 import mysql from 'mysql2/promise'
-import type {
-  ConnectionOptions,
-  RowDataPacket,
-  ResultSetHeader
-} from 'mysql2'
+import type { ConnectionOptions, RowDataPacket, ResultSetHeader } from 'mysql2'
 
 import type {
   Product,
   ProductInput,
   ProductUpdate,
-  UpdateProductDTO
+  UpdateProductDTO,
 } from '../../../schemas/product.js'
 
 import type { ProductModel as ProductModelInterface } from '../../product.model.js'
-
 
 /* =========================
    CONNECTION
@@ -24,7 +19,7 @@ const DEFAULT_CONFIG: ConnectionOptions = {
   user: 'root',
   port: 3306,
   password: '',
-  database: 'productdb'
+  database: 'productdb',
 }
 
 const connection = process.env.DATABASE_URL
@@ -58,7 +53,7 @@ const mapRowToProduct = (row: ProductRow): Product => ({
   brand: row.marca as Product['brand'],
   rate: row.rate,
   quantity: 0, //  no existe en DB todavía
-  owner: undefined //  no existe en DB todavía
+  owner: undefined, //  no existe en DB todavía
 })
 
 /* =========================
@@ -66,8 +61,7 @@ const mapRowToProduct = (row: ProductRow): Product => ({
 ========================= */
 
 export const MysqlProductModel: ProductModelInterface = {
-
-  async getAll ({ brand }: { brand?: string }): Promise<Product[]> {
+  async getAll({ brand }: { brand?: string }): Promise<Product[]> {
     let rows: ProductRow[]
 
     if (brand) {
@@ -95,12 +89,12 @@ export const MysqlProductModel: ProductModelInterface = {
     return rows.map(mapRowToProduct)
   },
 
-  async getByOwner (): Promise<Product[]> {
+  async getByOwner(): Promise<Product[]> {
     // aún no existe owner en DB
     return []
   },
 
-  async getById ({ id }: { id: string }): Promise<Product | null> {
+  async getById({ id }: { id: string }): Promise<Product | null> {
     const [rows] = await connection.query<ProductRow[]>(
       `SELECT p.id, p.nombre, p.descripcion, p.precio, p.image, p.rate,
               m.nombre AS marca
@@ -114,10 +108,9 @@ export const MysqlProductModel: ProductModelInterface = {
     const row = rows[0]
     if (!row) return null
     return mapRowToProduct(row)
-
   },
 
-  async create ({ input }: { input: ProductInput }): Promise<Product> {
+  async create({ input }: { input: ProductInput }): Promise<Product> {
     const { name, description, price, image, rate, brand } = input
 
     const [result] = await connection.query<ResultSetHeader>(
@@ -140,26 +133,26 @@ export const MysqlProductModel: ProductModelInterface = {
 
     if (!brandRow) {
       const [brandResult] = await connection.query<ResultSetHeader>(
-      'INSERT INTO marca (nombre) VALUES (?)',
-      [brand]
-    )
+        'INSERT INTO marca (nombre) VALUES (?)',
+        [brand]
+      )
       brandId = brandResult.insertId
     } else {
       brandId = brandRow.id
     }
 
-    await connection.query(
-      'INSERT INTO product_marca (product_id, marca_id) VALUES (?, ?)',
-      [productId, brandId]
-    )
+    await connection.query('INSERT INTO product_marca (product_id, marca_id) VALUES (?, ?)', [
+      productId,
+      brandId,
+    ])
 
     return {
       id: String(productId),
-      ...input
+      ...input,
     }
   },
 
-  async update ({ id, input }: { id: string; input: UpdateProductDTO }): Promise<Product | null> {
+  async update({ id, input }: { id: string; input: UpdateProductDTO }): Promise<Product | null> {
     const existing = await this.getById({ id })
     if (!existing) return null
 
@@ -214,7 +207,10 @@ export const MysqlProductModel: ProductModelInterface = {
       }
 
       await connection.query('DELETE FROM product_marca WHERE product_id = ?', [id])
-      await connection.query('INSERT INTO product_marca (product_id, marca_id) VALUES (?, ?)', [id, brandId])
+      await connection.query('INSERT INTO product_marca (product_id, marca_id) VALUES (?, ?)', [
+        id,
+        brandId,
+      ])
     }
 
     // Mapper/merge seguro para devolver la entidad actualizada
@@ -227,19 +223,16 @@ export const MysqlProductModel: ProductModelInterface = {
       brand: input.brand ?? existing.brand,
       rate: input.rate ?? existing.rate,
       quantity: input.quantity ?? existing.quantity,
-      owner: input.owner ?? existing.owner
+      owner: input.owner ?? existing.owner,
     }
 
     return merged
-  }
-,
-
-  async delete ({ id }: { id: string }): Promise<boolean> {
-    const [result] = await connection.query<ResultSetHeader>(
-      'DELETE FROM product WHERE id = ?',
-      [id]
-    )
+  },
+  async delete({ id }: { id: string }): Promise<boolean> {
+    const [result] = await connection.query<ResultSetHeader>('DELETE FROM product WHERE id = ?', [
+      id,
+    ])
 
     return result.affectedRows > 0
-  }
+  },
 }

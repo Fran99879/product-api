@@ -3,12 +3,7 @@ import { ZodError } from 'zod'
 import { AppError } from '../errors/appError.js'
 import { logger } from '../lib/logger.js'
 
-export const globalErrorHandler: ErrorRequestHandler = (
-  err,
-  req,
-  res,
-  _next
-) => {
+export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   let statusCode = 500
   let message = 'Internal Server Error'
   let errors: unknown = undefined
@@ -34,13 +29,13 @@ export const globalErrorHandler: ErrorRequestHandler = (
     statusCode,
     message,
     stack: err instanceof Error ? err.stack : undefined,
-    errors
+    errors,
   })
 
   res.status(statusCode).json({
     message,
     requestId: req.requestId,
     ...(errors ? { errors } : {}),
-    ...(isDev && err instanceof Error ? { stack: err.stack } : {})
+    ...(isDev && err instanceof Error ? { stack: err.stack } : {}),
   })
 }

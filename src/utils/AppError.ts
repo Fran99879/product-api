@@ -3,6 +3,6 @@ export class AppError extends Error {
     public message: string,
     public statusCode = 500
   ) {
-    super(message);
+    super(message)
   }
 }

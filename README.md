@@ -43,13 +43,13 @@ La API sigue una arquitectura modular por dominio:
 
 ## Variables de entorno
 
-| Variable | Requerido | Uso |
-| --- | --- | --- |
-| `PORT` | sí | Puerto en el que arranca el servidor (`src/server.ts`) |
-| `MONGO_URI` | sí | Cadena de conexión MongoDB |
-| `TOKEN_SECRET` | sí | Clave secreta para firmar/verificar JWT |
-| `NODE_ENV` | no | Controla el modo de error en middleware |
-| `LOG_LEVEL` | no | Nivel de log de `pino` |
+| Variable       | Requerido | Uso                                                    |
+| -------------- | --------- | ------------------------------------------------------ |
+| `PORT`         | sí        | Puerto en el que arranca el servidor (`src/server.ts`) |
+| `MONGO_URI`    | sí        | Cadena de conexión MongoDB                             |
+| `TOKEN_SECRET` | sí        | Clave secreta para firmar/verificar JWT                |
+| `NODE_ENV`     | no        | Controla el modo de error en middleware                |
+| `LOG_LEVEL`    | no        | Nivel de log de `pino`                                 |
 
 El repositorio incluye `.env.example` con un ejemplo de variables.
 
@@ -96,7 +96,6 @@ docker run -p 3000:3000 --env-file .env product-api
 Actualmente no hay un enlace público de deploy documentado.
 
 La API está preparada para despliegue en plataformas como Vercel, Render o Railway gracias a su healthcheck, Docker multi-stage y CI pipeline.
-
 
 ## Endpoints principales
 
