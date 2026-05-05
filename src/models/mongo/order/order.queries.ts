@@ -47,32 +47,57 @@ export const orderQueries: Pick<
     return docs.map(mapDocToOrder)
   },
   async getByUser(userId) {
-    const docs = (await OrderSchema.find({
-      buyer: new Types.ObjectId(userId),
-    }).populate({
+  const docs = (await OrderSchema.find({
+    buyer: new Types.ObjectId(userId),
+  })
+    .populate('buyer', '-role') // 👈 ESTO FALTABA
+    .populate({
       path: 'items.product',
       select: '-quantity',
       populate: { path: 'owner', select: 'username' },
     })) as unknown as PopulatedOrderDoc[]
 
-    return docs.map(mapDocToOrder)
-  },
+  return docs.map(mapDocToOrder)
+},
 
-  async getSellerOrders(sellerId) {
-    const sellerProducts = await Product.find({
-      owner: sellerId,
-    }).distinct('_id')
+ async getSellerOrders(sellerId) {
+  const sellerProducts = await Product.find({
+    owner: sellerId,
+  }).distinct('_id')
 
-    const docs = (await OrderSchema.find({
-      'items.product': { $in: sellerProducts },
+  const sellerProductIds = sellerProducts.map(id => id.toString())
+
+  const docs = (await OrderSchema.find({
+    'items.product': { $in: sellerProducts },
+  })
+    .populate('buyer', '-role')
+    .populate({
+      path: 'items.product',
+      select: '-quantity',
+      populate: { path: 'owner', select: 'username' },
+    })) as unknown as PopulatedOrderDoc[]
+
+  const orders = docs.map(mapDocToOrder)
+
+  return orders
+    .map((order) => {
+      const items = order.items.filter((item) =>
+        sellerProductIds.includes(item.product.id)
+      )
+
+      if (items.length === 0) return null
+
+      const total = items.reduce(
+        (acc, item) => acc + item.price * item.quantity,
+        0
+      )
+
+      return {
+        ...order,
+        items,
+        total,
+      }
     })
-      .populate('buyer', '-role')
-      .populate({
-        path: 'items.product',
-        select: '-quantity',
-        populate: { path: 'owner', select: 'username' },
-      })) as unknown as PopulatedOrderDoc[]
-
-    return docs.map(mapDocToOrder)
-  },
+    .filter((o): o is NonNullable<typeof o> => o !== null)
+},
 }

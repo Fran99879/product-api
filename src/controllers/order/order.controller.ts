@@ -38,10 +38,12 @@ export const createOrderController = ({ orderModel }: { orderModel: OrderModel }
 
   const getSellerOrders = async (req: Request, res: Response) => {
     if (!req.user) throw new AppError('Unauthorized', 401)
+
     const orders = await orderModel.getSellerOrders(req.user.id)
+
     res.json(orders)
   }
-
+  
   const create = async (req: Request, res: Response) => {
     const created = await orderModel.create({ ...req.body, buyer: req.user!.id })
     res.status(201).json(created)
