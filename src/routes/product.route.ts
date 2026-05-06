@@ -35,7 +35,11 @@ export const createProductRouter = ({ productModel }: { productModel: ProductMod
     productController.create
   )
 
-  productRouter.get('/:id', validateSchema(productIdSchema, 'params'), productController.getById)
+  productRouter.get(
+    '/:id', 
+    validateSchema(productIdSchema, 'params'), 
+    productController.getById
+  )
 
   productRouter.patch(
     '/:id',

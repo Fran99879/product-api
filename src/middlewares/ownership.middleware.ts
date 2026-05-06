@@ -19,7 +19,7 @@ export const canEditProduct = (productModel: ProductModel) => {
       return res.status(404).json({ message: 'Product not found' })
     }
 
-    if (product.owner !== user.id && user.role !== 'admin' && user.role !== 'seller') {
+    if (product.owner !== user.id && user.role !== 'admin') {
       return res.status(403).json({ message: 'Not allowed' })
     }
 

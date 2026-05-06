@@ -36,3 +36,13 @@ docker build -t product-api .
 
 Ejecuta una imagen ya creada= “levantá un container usando la caja que fabriqué”
 docker run -p 3000:3000 --env-file .env product-api
+
+
+
+Ejecutar tests
+
+Modo normal (corre todo y termina):
+pnpm test
+
+Modo watch (se queda escuchando cambios, mucho más cómodo):
+pnpm test --watch
