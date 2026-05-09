@@ -1,7 +1,7 @@
 import cors from 'cors'
 import type { CorsOptions } from 'cors'
 
-const ACCEPTED_ORIGINS = ['http://localhost:3001']
+const ACCEPTED_ORIGINS = process.env.CLIENT_URLS?.split(',') ?? []
 
 interface CorsMiddlewareOptions {
   acceptedOrigin?: string[]
@@ -22,6 +22,9 @@ export const corsMiddleware = ({
 
       return callback(new Error('Not allowed by CORS'))
     },
+
+    credentials: true,
+
     allowedHeaders: ['Content-Type', 'Authorization'],
   }
 

@@ -1,17 +1,31 @@
-import 'dotenv/config'
+import "dotenv/config";
+import { z } from "zod";
 
-function requireEnv(variable: string): string {
-  const value = process.env[variable]
+const envSchema = z.object({
+  PORT: z.coerce.number().default(3000),
 
-  if (!value) {
-    throw new Error(`Missing environment variable: ${variable}`)
-  }
+  MONGO_URI: z
+    .string()
+    .url("MONGO_URI must be a valid URL"),
 
-  return value
+  TOKEN_SECRET: z
+    .string()
+    .min(10, "TOKEN_SECRET must be at least 10 characters"),
+
+  CLIENT_URLS: z
+    .string()
+    .min(1, "CLIENT_URLS is required"),
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error(
+    "❌ Invalid environment variables",
+    parsed.error.flatten().fieldErrors
+  );
+
+  process.exit(1);
 }
 
-export const ENV = {
-  PORT: Number(process.env.PORT ?? 3000),
-  MONGO_URI: requireEnv('MONGO_URI'),
-  TOKEN_SECRET: requireEnv('TOKEN_SECRET'),
-}
+export const ENV = parsed.data;
