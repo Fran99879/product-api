@@ -13,6 +13,16 @@ import { notFound } from './middlewares/notFound.middleware.js'
 import { globalErrorHandler } from './middlewares/error.middleware.js'
 import { requestId } from './middlewares/requestId.js'
 import { errorHandler } from './middlewares/errorHandler.js'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100, 
+  message: {
+    message: "Too many requests from this IP, please try again after 15 minutes",
+  },
+})
 
 interface CreateAppDependencies {
   productModel: ProductModel
@@ -22,6 +32,7 @@ interface CreateAppDependencies {
 export const createApp = ({ productModel, orderModel }: CreateAppDependencies): Application => {
   const app = express()
 
+  app.use(helmet())
   app.use(morgan('dev'))
   app.use(corsMiddleware())
   app.use(json())
