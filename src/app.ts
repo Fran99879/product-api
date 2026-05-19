@@ -15,10 +15,11 @@ import { requestId } from './middlewares/requestId.js'
 import { errorHandler } from './middlewares/errorHandler.js'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import mongoSanitize from "express-mongo-sanitize";
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100, 
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: {
     message: "Too many requests from this IP, please try again after 15 minutes",
   },
@@ -33,6 +34,11 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   const app = express()
 
   app.use(helmet())
+  app.use(
+    mongoSanitize({
+      replaceWith: "_",
+    })
+  );
   app.use(morgan('dev'))
   app.use(corsMiddleware())
   app.use(json())
