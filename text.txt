@@ -46,3 +46,8 @@ pnpm test
 
 Modo watch (se queda escuchando cambios, mucho más cómodo):
 pnpm test --watch
+
+los 3 juntos para eliminar-crear-levantar
+docker compose down
+docker compose build --no-cache
+docker compose up

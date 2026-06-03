@@ -6,47 +6,87 @@
     "price": 1100,
     "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
     "brand": "Apple",
+    "category": "smartphone",
+    "model": "15",
     "rate": 9,
-    "quantity": 50
+    "quantity": 50,
+    "isActive": true,
+    "specs": {
+      "display": "6.1 OLED",
+      "processor": "A16 Bionic",
+      "camera": "48 MP"
+    }
   },
   {
     "id": "2",
     "name": "Samsung Galaxy S23",
-    "description": "Pantalla Dynamic AMOLED 6.1”, Snapdragon 8 Gen 2 y triple cámara.",
+    "description": "Pantalla Dynamic AMOLED 6.1\", Snapdragon 8 Gen 2 y triple cámara.",
     "price": 950,
     "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
     "brand": "Samsung",
+    "category": "smartphone",
+    "model": "S23",
     "rate": 7,
-    "quantity": 200
+    "quantity": 200,
+    "isActive": true,
+    "specs": {
+      "display": "6.1 Dynamic AMOLED",
+      "processor": "Snapdragon 8 Gen 2",
+      "camera": "Triple Camera System"
+    }
   },
   {
     "id": "3",
     "name": "Xiaomi 13",
-    "description": "Pantalla AMOLED 6.36”, Snapdragon 8 Gen 2 y cámara Leica.",
+    "description": "Pantalla AMOLED 6.36\", Snapdragon 8 Gen 2 y cámara Leica.",
     "price": 800,
     "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
     "brand": "Xiaomi",
+    "category": "smartphone",
+    "model": "13",
     "rate": 9,
-    "quantity": 3
+    "quantity": 3,
+    "isActive": true,
+    "specs": {
+      "display": "6.36 AMOLED",
+      "processor": "Snapdragon 8 Gen 2",
+      "camera": "Leica Optics"
+    }
   },
   {
     "id": "4",
     "name": "Google Pixel 8",
-    "description": "Pantalla Actua 6.2”, chip Tensor G3 y cámara con IA avanzada.",
+    "description": "Pantalla Actua 6.2\", chip Tensor G3 y cámara con IA avanzada.",
     "price": 900,
     "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
     "brand": "Google",
+    "category": "smartphone",
+    "model": "8",
     "rate": 8,
-    "quantity": 2
+    "quantity": 2,
+    "isActive": true,
+    "specs": {
+      "display": "6.2 Actua",
+      "processor": "Tensor G3",
+      "camera": "AI-powered"
+    }
   },
   {
     "id": "5",
     "name": "Motorola Edge 40",
-    "description": "Pantalla pOLED 6.55”, Dimensity 8020 y diseño ultraligero.",
+    "description": "Pantalla pOLED 6.55\", Dimensity 8020 y diseño ultraligero.",
     "price": 650,
     "image": "https://andro4all.com/hero/2023/12/iphone-15-verde.jpg?width=1200",
     "brand": "Motorola",
+    "category": "smartphone",
+    "model": "Edge 40",
     "rate": 4,
-    "quantity": 10
+    "quantity": 10,
+    "isActive": true,
+    "specs": {
+      "display": "6.55 pOLED",
+      "processor": "Dimensity 8020",
+      "design": "Ultra-lightweight"
+    }
   }
 ]

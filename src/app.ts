@@ -34,11 +34,13 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   const app = express()
 
   app.use(helmet())
-  app.use(
-    mongoSanitize({
-      replaceWith: "_",
-    })
-  );
+  console.log("helmet ok")
+  // app.use(
+  //   mongoSanitize({
+  //     replaceWith: "_",
+  //   })
+  // );
+  console.log("sanitize ok")
   app.use(morgan('dev'))
   app.use(corsMiddleware())
   app.use(json())

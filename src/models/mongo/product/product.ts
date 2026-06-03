@@ -11,9 +11,13 @@ const mapDocToProduct = (doc: any): Product => ({
   price: doc.price,
   image: doc.image,
   brand: doc.brand,
+  category: doc.category,
+  model: doc.model,
   rate: doc.rate,
   owner: doc.owner,
   quantity: doc.quantity,
+  isActive: doc.isActive,
+  specs: doc.specs ? Object.fromEntries(doc.specs) : {},
 })
 
 // Filtrar campos undefined para actualizar de forma segura

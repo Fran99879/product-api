@@ -41,8 +41,10 @@ export const createAuthController = (userModel: UserModel) => {
           createdAt: userSaved.createdAt,
         },
       })
-    } catch {
-      return res.status(500).json({ message: 'Error registering user' })
+    } catch (error) {
+      return res.status(500).json({
+        message: "Error registering user",
+      });
     }
   }
 
@@ -82,8 +84,11 @@ export const createAuthController = (userModel: UserModel) => {
           role: userFound.role,
         },
       })
-    } catch {
-      return res.status(500).json({ message: 'Login error' })
+    } catch (error) {
+      return res.status(500).json({
+        message: 'Login error',
+        error: error instanceof Error ? error.message : error
+      })
     }
   }
 

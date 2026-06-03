@@ -3,6 +3,7 @@ import { ENV } from '../config/env.js'
 import type { JwtPayloadUser } from '../types/auth.js'
 
 export function createAccessToken(payload: JwtPayloadUser): Promise<string> {
+
   return new Promise((resolve, reject) => {
     jwt.sign(
       payload satisfies JwtPayloadUser,

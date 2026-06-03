@@ -22,7 +22,7 @@ describe("Products", () => {
   beforeEach(async () => {
     await UserMongo.deleteMany({});
     await Product.deleteMany({});
-    
+
     // 👤 USER normal
     const userRegister = await request(app).post("/user/register").send({
       username: "user",
@@ -36,20 +36,25 @@ describe("Products", () => {
     });
 
     userToken = userLogin.body.token;
-    
+
     // 🧑‍💼 SELLER
     const sellerRegister = await request(app).post("/user/register").send({
       username: "seller",
-      email: "seller@test.com",
+      email: "seller-products@test.com",
       password: "123456",
     });
+    console.log("sellerRegister.body");
+    console.dir(sellerRegister.body, { depth: null });
 
+    
     sellerId = sellerRegister.body.user?.id || sellerRegister.body.id;
-
+    
+    console.log("sellerId:", sellerId);
+    
     await UserMongo.findByIdAndUpdate(sellerId, { role: "seller" });
 
     const sellerLogin = await request(app).post("/user/login").send({
-      email: "seller@test.com",
+      email: "seller-products@test.com",
       password: "123456",
     });
 
@@ -65,12 +70,14 @@ describe("Products", () => {
       .send({
         name: "MacBook",
         brand: "Apple",
+        category: "laptop",
+        model: "M3 Pro",
         description: "Laptop de alta gama",
         price: 2000,
         quantity: 5,
         image: "https://test.com/image.jpg",
       });
-
+    
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty("id");
     expect(res.body.name).toBe("MacBook");
@@ -84,26 +91,31 @@ describe("Products", () => {
       .send({
         name: "iPhone",
         brand: "Apple",
+        category: "smartphone",
+        model: "15 Pro",
         price: 1000,
         description: "Smartphone de alta gama",
         quantity: 5,
         image: "https://test.com/image.jpg",
       });
 
+    
     expect(res.status).toBe(403);
   });
 
-  // 🧪 3. Obtener productos
+  // 🧪 3. Obtener productosF
   it("should get all products", async () => {
     // crear uno primero
     await Product.create({
-      name: "iPhone",
+      name: "iPhone2",
       brand: "Apple",
+      category: "smartphone",
+      model: "15",
       price: 1000,
       description: "Smartphone de alta gama",
-      quantity: 10,
+      quantity: 5,
       owner: sellerId,
-      image: "https://test.com/image.jpg",
+      image: "https://test.com",
     });
 
     const res = await request(app).get("/products");
@@ -117,13 +129,14 @@ describe("Products", () => {
   it("should NOT allow another seller to update product", async () => {
     // crear producto con seller A
     const product = await Product.create({
-      name: "iPad",
+      name: "iPhone2",
       brand: "Apple",
-      price: 800,
-      quantity: 5,
-      owner: sellerId,
+      category: "smartphone",
+      model: "15",
+      price: 1000,
+      quantity: 10,
       image: "https://test.com/image.jpg",
-      description: "Tablet de alta gama",
+      owner: sellerId,
     });
 
     // crear seller B

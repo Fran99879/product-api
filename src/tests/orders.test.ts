@@ -41,7 +41,7 @@ describe("Orders", () => {
         // 🧑‍💼 SELLER
         const sellerRegister = await request(app).post("/user/register").send({
             username: "seller",
-            email: "seller@test.com",
+            email: "seller-orders@test.com",
             password: "123456",
         });
 
@@ -51,7 +51,7 @@ describe("Orders", () => {
         await UserMongo.findByIdAndUpdate(sellerId, { role: "seller" });
 
         const sellerLogin = await request(app).post("/user/login").send({
-            email: "seller@test.com",
+            email: "seller-orders@test.com",
             password: "123456",
         });
 
@@ -61,11 +61,12 @@ describe("Orders", () => {
         const product = await Product.create({
             name: "iPhone",
             brand: "Apple",
-            description: "Smartphone de alta gama",
+            category: "smartphone",
+            model: "15",
             price: 1000,
-            quantity: 10,
+            quantity: 5,
+            image: "https://test.com",
             owner: sellerId,
-            image: "test.jpg",
         });
 
         productId = product._id.toString();
@@ -110,7 +111,7 @@ describe("Orders", () => {
 
         const product = await Product.findById(productId);
 
-        expect(product?.quantity).toBe(10);
+        expect(product?.quantity).toBe(5);
     });
 
     // 🧪 4. state machine

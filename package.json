@@ -1,6 +1,7 @@
 {
   "name": "backend-products",
   "version": "1.0.0",
+  "packageManager": "pnpm@10.33.3",
   "description": "",
   "main": "dist/server.js",
   "type": "module",
