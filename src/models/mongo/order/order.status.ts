@@ -74,7 +74,7 @@ export const orderStatusMethods: Pick<OrderModel, 'cancel' | 'updateStatus'> = {
     }
 
     order.status = nextStatus
-    order.updatedAt = new Date()
+    //order.updatedAt = new Date()
 
     await order.save()
 

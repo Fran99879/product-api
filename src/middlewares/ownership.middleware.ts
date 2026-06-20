@@ -1,8 +1,6 @@
 import type { Request, Response, NextFunction } from 'express'
 import type { ProductModel } from '../models/product.model.js'
 import type { OrderModel } from '../models/order.model.js'
-import type { Product } from '../schemas/product.js'
-import type { Order } from '../schemas/order.schema.js'
 import { AppError } from '../errors/appError.js'
 
 export const canEditProduct = (productModel: ProductModel) => {
@@ -20,8 +18,16 @@ export const canEditProduct = (productModel: ProductModel) => {
       return next(new AppError('Product not found', 404))
     }
 
-    if (product.owner !== user.id && user.role !== 'admin') {
-      return next(new AppError('Not allowed', 403))
+    console.log("OWNER =", product?.owner)
+    console.log("USER =", user.id)
+    console.log("ROLE =", user.role)
+
+    if (product.owner !== user.id && user.role !== "admin") {
+      return res.status(403).json({
+        productOwner: product.owner,
+        userId: user.id,
+        role: user.role,
+      })
     }
 
     req.product = product

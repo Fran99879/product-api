@@ -37,6 +37,7 @@ export const orderQueries: Pick<
     }
 
     const docs = (await OrderSchema.find(query)
+      .sort({ createdAt: -1 })
       .populate('buyer', '-role')
       .populate({
         path: 'items.product',
@@ -50,7 +51,8 @@ export const orderQueries: Pick<
   const docs = (await OrderSchema.find({
     buyer: new Types.ObjectId(userId),
   })
-    .populate('buyer', '-role') // 👈 ESTO FALTABA
+    .sort({ createdAt: -1 })
+    .populate('buyer', '-role') 
     .populate({
       path: 'items.product',
       select: '-quantity',
@@ -70,6 +72,7 @@ export const orderQueries: Pick<
   const docs = (await OrderSchema.find({
     'items.product': { $in: sellerProducts },
   })
+    .sort({ createdAt: -1 })
     .populate('buyer', '-role')
     .populate({
       path: 'items.product',

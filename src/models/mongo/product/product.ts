@@ -14,11 +14,12 @@ const mapDocToProduct = (doc: any): Product => ({
   category: doc.category,
   model: doc.model,
   rate: doc.rate,
-  owner: doc.owner,
+  owner: String(doc.owner),
   quantity: doc.quantity,
   isActive: doc.isActive,
   specs: doc.specs ? Object.fromEntries(doc.specs) : {},
 })
+
 
 // Filtrar campos undefined para actualizar de forma segura
 const filterUndefined = (obj: Record<string, unknown>): Record<string, unknown> => {
