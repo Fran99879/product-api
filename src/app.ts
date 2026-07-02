@@ -18,6 +18,7 @@ import { errorHandler } from './middlewares/errorHandler.js'
 import helmet from 'helmet'
 import { globalLimiter } from './middlewares/rateLimit.js'
 import { sanitizeRequest } from './middlewares/sanitize.js'
+import { metricsMiddleware } from './middlewares/metrics.js'
 
 interface CreateAppDependencies {
   productModel: ProductModel
@@ -37,6 +38,8 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   app.use(sanitizeRequest)
 
   app.use(requestId)
+  // Request metrics (F11.5): mide todo lo que pasa por el router.
+  app.use(metricsMiddleware)
 
   app.disable('x-powered-by')
 

@@ -1,4 +1,7 @@
 import 'dotenv/config'
+// Sentry se inicializa acá (primer import) para capturar también errores
+// tempranos y uncaught exceptions/rejections del proceso.
+import './config/sentry.js'
 import { createApp } from './app.js'
 import { createModels } from './models/index.js'
 

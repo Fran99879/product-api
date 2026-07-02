@@ -29,6 +29,9 @@ export type CancelOrderInput = z.infer<typeof cancelOrderSchema>
 export type OrderItem = {
   product: {
     id: string
+    name: string
+    brand: string
+    image?: string
     owner: string
   }
   quantity: number

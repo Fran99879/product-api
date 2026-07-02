@@ -4,6 +4,22 @@ import { validateChangeUserRoleParams, validateChangeUserRoleBody } from '../../
 import { assertUser } from '../../utils/assertUser.js'
 
 export const createUserController = (userModel: UserModel) => {
+  const listUsers = async (_req: Request, res: Response) => {
+    const users = await userModel.getAll()
+
+    // Solo campos públicos: nunca exponer password ni tokens.
+    res.json(
+      users.map((u) => ({
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        role: u.role,
+        emailVerified: u.emailVerified,
+        createdAt: u.createdAt,
+      }))
+    )
+  }
+
   const updateUserRole = async (req: Request, res: Response) => {
     assertUser(req)
 
@@ -36,5 +52,5 @@ export const createUserController = (userModel: UserModel) => {
     })
   }
 
-  return { updateUserRole }
+  return { listUsers, updateUserRole }
 }

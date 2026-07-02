@@ -22,11 +22,16 @@ export type PopulatedOwner = {
 
 export type PopulatedProduct = {
   _id: Types.ObjectId
+  name: string
+  brand: string
+  image?: string
   owner: PopulatedOwner
 }
 
 export type PopulatedOrderItem = {
-  product: PopulatedProduct
+  // null si el producto/owner fue borrado después de creada la orden
+  // (populate de una ref inexistente devuelve null).
+  product: (Omit<PopulatedProduct, 'owner'> & { owner: PopulatedOwner | null }) | null
   quantity: number
   price: number
 }
@@ -49,10 +54,17 @@ export const mapDocToOrder = (doc: PopulatedOrderDoc): Order => ({
     email: (doc.buyer as any).email,
   },
   items: doc.items.map((i) => ({
-    product: {
-      id: i.product._id.toString(),
-      owner: i.product.owner._id.toString(),
-    },
+    // La orden es un registro histórico: debe sobrevivir a que el producto o
+    // su owner se borren después (ej: moderación admin).
+    product: i.product
+      ? {
+          id: i.product._id.toString(),
+          name: i.product.name,
+          brand: i.product.brand,
+          image: i.product.image,
+          owner: i.product.owner?._id.toString() ?? '',
+        }
+      : { id: '', name: 'Producto eliminado', brand: '', owner: '' },
     quantity: i.quantity,
     price: i.price,
   })),

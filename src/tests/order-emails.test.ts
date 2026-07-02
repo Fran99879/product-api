@@ -14,7 +14,9 @@ import type { OrderStatus } from "../types/order.js";
 const baseOrder = (status: OrderStatus): Order => ({
   id: "abcdef1234567890",
   buyer: { id: "u1", username: "juan", email: "juan@test.com" },
-  items: [{ product: { id: "p1", owner: "s1" }, quantity: 2, price: 100 }],
+  items: [
+    { product: { id: "p1", name: "iPhone", brand: "Apple", owner: "s1" }, quantity: 2, price: 100 },
+  ],
   total: 200,
   status,
   createdAt: new Date().toISOString(),

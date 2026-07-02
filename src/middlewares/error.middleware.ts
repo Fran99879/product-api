@@ -2,6 +2,7 @@ import type { ErrorRequestHandler } from 'express'
 import { ZodError } from 'zod'
 import { AppError } from '../errors/appError.js'
 import { logger } from '../lib/logger.js'
+import { captureError } from '../config/sentry.js'
 
 export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   let statusCode = 500
@@ -31,6 +32,17 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) =>
     stack: err instanceof Error ? err.stack : undefined,
     errors,
   })
+
+  // Solo errores de servidor: los 4xx son casos de negocio esperados,
+  // mandarlos a Sentry sería puro ruido.
+  if (statusCode >= 500) {
+    captureError(err, {
+      requestId: req.requestId,
+      userId: req.user?.id,
+      method: req.method,
+      path: req.originalUrl,
+    })
+  }
 
   res.status(statusCode).json({
     message,

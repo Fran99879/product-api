@@ -4,13 +4,19 @@ import rateLimit from 'express-rate-limit'
 // registran usuarios en cada test y pisarían el límite.
 const isTestEnv = () => process.env.NODE_ENV === 'test'
 
+// El limitador GLOBAL solo aplica en producción: una SPA con react-query
+// (prefetch + retries + refetch de dashboards) quema el cupo enseguida y deja
+// la API devolviendo 429 mientras desarrollás. El authLimiter SÍ corre en dev
+// para poder probar el flujo anti fuerza bruta.
+const isProdEnv = () => process.env.NODE_ENV === 'production'
+
 // Limitador global: aplica a toda la API.
 export const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
-  max: 100,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: isTestEnv,
+  skip: () => !isProdEnv(),
   message: {
     message: 'Too many requests from this IP, please try again after 15 minutes',
   },

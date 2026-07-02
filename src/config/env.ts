@@ -40,6 +40,11 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   // Remitente de los mails, ej: "Marketplace <no-reply@marketplace.com>"
   MAIL_FROM: z.string().optional(),
+
+  // Sentry (F11.5) — error monitoring. Opcional: sin DSN queda deshabilitado
+  // (no rompe la app ni los tests), igual que el mailer.
+  SENTRY_DSN: z.string().optional(),
+  SENTRY_ENVIRONMENT: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
