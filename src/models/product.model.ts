@@ -1,7 +1,13 @@
-import type { Product, ProductInput, ProductUpdate } from '../schemas/product.js'
+import type {
+  PaginatedProducts,
+  Product,
+  ProductInput,
+  ProductQuery,
+  ProductUpdate,
+} from '../schemas/product.js'
 
 export interface ProductModel {
-  getAll(params: { brand?: string }): Promise<Product[]>
+  getAll(params: { query: ProductQuery }): Promise<PaginatedProducts>
 
   getById(params: { id: string }): Promise<Product | null>
 

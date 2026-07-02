@@ -35,6 +35,8 @@ export const sanitizeInPlace = (value: unknown): void => {
 export const sanitizeRequest = (req: Request, _res: Response, next: NextFunction) => {
   sanitizeInPlace(req.body)
   sanitizeInPlace(req.params)
-  sanitizeInPlace(req.query)
+  // req.query no se sanitiza acá: en Express 5 es un getter que re-parsea en
+  // cada acceso (mutarlo no persiste). Con el query parser "simple" las claves
+  // llegan planas (sin objetos anidados) y los endpoints validan con zod.
   next()
 }

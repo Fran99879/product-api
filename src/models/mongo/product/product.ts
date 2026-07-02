@@ -2,7 +2,12 @@ import mongoose from 'mongoose'
 import { Product as ProductSchema } from '../../../schemas/product.mongodb.js'
 
 import type { ProductModel } from '../../product.model.js'
-import type { Product, ProductInput, ProductUpdate } from '../../../schemas/product.js'
+import type {
+  Product,
+  ProductInput,
+  ProductQuery,
+  ProductUpdate,
+} from '../../../schemas/product.js'
 
 const mapDocToProduct = (doc: any): Product => ({
   id: doc._id.toString(),
@@ -26,12 +31,55 @@ const filterUndefined = (obj: Record<string, unknown>): Record<string, unknown> 
   return Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined))
 }
 
-export const MongoProductModel: ProductModel = {
-  async getAll({ brand }: { brand?: string }) {
-    const query = brand ? { brand: { $regex: brand, $options: 'i' } } : {}
+// Escapar caracteres especiales de regex en el término de búsqueda
+const escapeRegex = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-    const docs = await ProductSchema.find(query)
-    return docs.map(mapDocToProduct)
+const SORT_MAP: Record<ProductQuery['sort'], Record<string, 1 | -1>> = {
+  recent: { createdAt: -1 },
+  'price-asc': { price: 1 },
+  'price-desc': { price: -1 },
+  'rate-desc': { rate: -1 },
+}
+
+const buildFilter = (query: ProductQuery): Record<string, unknown> => {
+  const filter: Record<string, unknown> = {}
+
+  if (query.search) {
+    const regex = { $regex: escapeRegex(query.search), $options: 'i' }
+    filter.$or = [{ name: regex }, { brand: regex }, { model: regex }, { description: regex }]
+  }
+
+  if (query.brand) filter.brand = { $regex: escapeRegex(query.brand), $options: 'i' }
+  if (query.category) filter.category = query.category
+
+  if (query.minPrice !== undefined || query.maxPrice !== undefined) {
+    filter.price = {
+      ...(query.minPrice !== undefined ? { $gte: query.minPrice } : {}),
+      ...(query.maxPrice !== undefined ? { $lte: query.maxPrice } : {}),
+    }
+  }
+
+  if (query.inStock) filter.quantity = { $gt: 0 }
+
+  return filter
+}
+
+export const MongoProductModel: ProductModel = {
+  async getAll({ query }: { query: ProductQuery }) {
+    const filter = buildFilter(query)
+    const skip = (query.page - 1) * query.limit
+
+    const [docs, total] = await Promise.all([
+      ProductSchema.find(filter).sort(SORT_MAP[query.sort]).skip(skip).limit(query.limit),
+      ProductSchema.countDocuments(filter),
+    ])
+
+    return {
+      data: docs.map(mapDocToProduct),
+      total,
+      page: query.page,
+      totalPages: Math.max(1, Math.ceil(total / query.limit)),
+    }
   },
 
   async getByOwner({ owner }: { owner: string }) {

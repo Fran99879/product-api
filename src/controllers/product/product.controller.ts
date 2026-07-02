@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import type { ProductModel } from '../../models/product.model.js'
+import type { ProductQuery } from '../../schemas/product.js'
 import { AppError } from '../../errors/appError.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 
@@ -7,11 +8,11 @@ export class ProductController {
   constructor(private readonly productModel: ProductModel) {}
 
   getAll = async (req: Request, res: Response) => {
-    const { brand } = req.query
-    const products = await this.productModel.getAll({
-      brand: brand as string | undefined,
+    // Validada y coercionada por validateSchema(productQuerySchema, 'query')
+    const result = await this.productModel.getAll({
+      query: req.validatedQuery as ProductQuery,
     })
-    res.json(products)
+    res.json(result)
   }
 
   getMyProducts = async (req: Request, res: Response) => {

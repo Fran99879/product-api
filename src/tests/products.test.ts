@@ -103,7 +103,7 @@ describe("Products", () => {
     expect(res.status).toBe(403);
   });
 
-  // 🧪 3. Obtener productosF
+  // 🧪 3. Obtener productos (respuesta paginada)
   it("should get all products", async () => {
     // crear uno primero
     await Product.create({
@@ -121,8 +121,67 @@ describe("Products", () => {
     const res = await request(app).get("/products");
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThan(0);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBeGreaterThan(0);
+    expect(res.body.total).toBe(1);
+    expect(res.body.page).toBe(1);
+    expect(res.body.totalPages).toBe(1);
+  });
+
+  // 🧪 3b. Búsqueda, filtros, sorting y paginación
+  describe("catalog queries", () => {
+    beforeEach(async () => {
+      const base = {
+        description: "desc",
+        image: "https://test.com/i.jpg",
+        owner: () => sellerId,
+      };
+      await Product.create([
+        { ...base, owner: sellerId, name: "MacBook Pro", brand: "Apple", category: "laptop", model: "M3", price: 2000, quantity: 5, rate: 9 },
+        { ...base, owner: sellerId, name: "Galaxy S24", brand: "Samsung", category: "smartphone", model: "S24", price: 800, quantity: 0, rate: 8 },
+        { ...base, owner: sellerId, name: "Bravia TV", brand: "Sony", category: "tv", model: "X90", price: 1200, quantity: 3, rate: 7 },
+      ]);
+    });
+
+    it("should search by text", async () => {
+      const res = await request(app).get("/products?search=galaxy");
+      expect(res.status).toBe(200);
+      expect(res.body.total).toBe(1);
+      expect(res.body.data[0].name).toBe("Galaxy S24");
+    });
+
+    it("should filter by category and price range", async () => {
+      const res = await request(app).get("/products?minPrice=1000&maxPrice=2500");
+      expect(res.body.total).toBe(2);
+
+      const res2 = await request(app).get("/products?category=tv");
+      expect(res2.body.total).toBe(1);
+      expect(res2.body.data[0].brand).toBe("Sony");
+    });
+
+    it("should filter by stock", async () => {
+      const res = await request(app).get("/products?inStock=true");
+      expect(res.body.total).toBe(2);
+      expect(res.body.data.every((p: any) => p.quantity > 0)).toBe(true);
+    });
+
+    it("should sort by price", async () => {
+      const res = await request(app).get("/products?sort=price-asc");
+      const prices = res.body.data.map((p: any) => p.price);
+      expect(prices).toEqual([800, 1200, 2000]);
+    });
+
+    it("should paginate", async () => {
+      const res = await request(app).get("/products?limit=2&page=2");
+      expect(res.body.data.length).toBe(1);
+      expect(res.body.totalPages).toBe(2);
+      expect(res.body.page).toBe(2);
+    });
+
+    it("should reject invalid query params", async () => {
+      const res = await request(app).get("/products?sort=hacker&limit=9999");
+      expect(res.status).toBe(400);
+    });
   });
 
   // 🧪 4. Ownership (otro seller NO puede editar)

@@ -95,4 +95,16 @@ const productSchema = new mongoose.Schema(
   }
 );
 
+// Índices para las queries del catálogo (F11.2):
+// - browse por categoría ordenado por más reciente (sort default)
+productSchema.index({ category: 1, createdAt: -1 })
+// - filtro por rango de precio + sort price-asc/price-desc
+productSchema.index({ price: 1 })
+// - sort rate-desc
+productSchema.index({ rate: -1 })
+// - sort default sin filtro de categoría
+productSchema.index({ createdAt: -1 })
+// - filtro por marca
+productSchema.index({ brand: 1 })
+
 export const Product = mongoose.model('Product', productSchema)

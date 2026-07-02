@@ -19,7 +19,11 @@ export const validateSchema =
       })
     }
 
-    if (typeof req[part] === 'object' && req[part] !== null) {
+    if (part === 'query') {
+      // Express 5: req.query es un getter read-only que re-parsea en cada
+      // acceso — mutarlo no persiste. La versión validada/coercionada va aparte.
+      req.validatedQuery = result.data
+    } else if (typeof req[part] === 'object' && req[part] !== null) {
       Object.keys(req[part]).forEach((key) => {
         delete (req[part] as Record<string, unknown>)[key]
       })

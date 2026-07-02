@@ -57,10 +57,38 @@ export type ProductUpdate = z.infer<typeof productUpdateSchema>
 // DTO para actualización parcial: Partial del Product pero sin permitir propiedades extra
 export type UpdateProductDTO = z.infer<typeof productUpdateSchema>
 
+export const PRODUCT_SORT_OPTIONS = ['recent', 'price-asc', 'price-desc', 'rate-desc'] as const
+
 export const productQuerySchema = z.object({
+  // Búsqueda de texto sobre name / brand / model / description
+  search: z.string().trim().max(100).optional(),
+
   brand: z.string().optional(),
   category: z.enum(VALID_CATEGORIES).optional(),
+
+  minPrice: z.coerce.number().int().min(0).optional(),
+  maxPrice: z.coerce.number().int().min(0).optional(),
+
+  // "true" → solo productos con stock
+  inStock: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+
+  sort: z.enum(PRODUCT_SORT_OPTIONS).default('recent'),
+
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(12),
 })
+
+export type ProductQuery = z.infer<typeof productQuerySchema>
+
+export interface PaginatedProducts {
+  data: Product[]
+  total: number
+  page: number
+  totalPages: number
+}
 
 export const productIdSchema = z.object({
   id: z.string().min(1, 'Product id is required'),
