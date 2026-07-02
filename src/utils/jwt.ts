@@ -8,7 +8,8 @@ export function createAccessToken(payload: JwtPayloadUser): Promise<string> {
     jwt.sign(
       payload satisfies JwtPayloadUser,
       ENV.TOKEN_SECRET,
-      { expiresIn: '1d' },
+      // Access token de vida corta: el refresh token (cookie httpOnly) lo renueva.
+      { expiresIn: '15m' },
       (err, token) => {
         if (err || !token) return reject(err)
         resolve(token)

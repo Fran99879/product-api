@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
+import jwt from 'jsonwebtoken'
 import type { JwtPayloadUser } from '../types/auth.ts'
 import { verifyAccessToken } from '../utils/jwt.js'
 
@@ -30,7 +31,13 @@ export const authRequired = (req: Request, res: Response, next: NextFunction) =>
 
     req.user = decoded as JwtPayloadUser
     next()
-  } catch {
+  } catch (err) {
+    // Token vencido → 401 para que el cliente intente refrescar el access token.
+    // Token adulterado/otro error → 403 (no se refresca, se fuerza re-login).
+    if (err instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: 'Token expired' })
+    }
+
     return res.status(403).json({
       message: 'Invalid token',
     })

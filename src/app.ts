@@ -1,5 +1,6 @@
 import express, { json, type Application } from 'express'
 import morgan from 'morgan'
+import cookieParser from 'cookie-parser'
 
 import { corsMiddleware } from './middlewares/cors.js'
 import { createProductRouter } from './routes/product.route.js'
@@ -31,6 +32,7 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   app.use(morgan('dev'))
   app.use(corsMiddleware())
   app.use(json())
+  app.use(cookieParser())
   // Sanitización NoSQL (va después de json() para que el body ya esté parseado).
   app.use(sanitizeRequest)
 

@@ -13,6 +13,15 @@ import { sendPasswordResetEmail } from '../../emails/password-reset.email.js'
 import { sendEmailVerificationEmail } from '../../emails/email-verification.email.js'
 import { logger } from '../../lib/logger.js'
 import type { UserModel } from '../../models/user.model.js'
+import type { SessionModel } from '../../models/session.model.js'
+import {
+  generateRefreshToken,
+  hashRefreshToken,
+  setRefreshCookie,
+  clearRefreshCookie,
+  REFRESH_COOKIE,
+  REFRESH_TTL_MS,
+} from '../../utils/refreshToken.js'
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000 // 1 hora
 const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000 // 24 horas
@@ -20,7 +29,25 @@ const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000 // 24 horas
 const hashToken = (raw: string) =>
   crypto.createHash('sha256').update(raw).digest('hex')
 
-export const createAuthController = (userModel: UserModel) => {
+export const createAuthController = (
+  userModel: UserModel,
+  sessionModel: SessionModel
+) => {
+  // Crea una sesión de refresh (guarda el hash) y setea la cookie httpOnly.
+  const issueRefreshSession = async (
+    res: Response,
+    userId: string,
+    userAgent: string
+  ) => {
+    const rawToken = generateRefreshToken()
+    await sessionModel.create({
+      userId,
+      tokenHash: hashRefreshToken(rawToken),
+      userAgent,
+      expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
+    })
+    setRefreshCookie(res, rawToken)
+  }
   // Genera y guarda (hasheado) un token de verificación y dispara el email.
   // Best-effort: no bloquea ni rompe el flujo que lo llama.
   const issueEmailVerification = async (user: {
@@ -70,6 +97,9 @@ export const createAuthController = (userModel: UserModel) => {
 
       // Mail de verificación de email (best-effort, no bloquea el registro).
       await issueEmailVerification(userSaved)
+
+      // Sesión de refresh (cookie httpOnly).
+      await issueRefreshSession(res, userSaved.id, req.headers['user-agent'] ?? '')
 
       return res.status(201).json({
         token,
@@ -127,6 +157,9 @@ export const createAuthController = (userModel: UserModel) => {
         role: userFound.role,
       })
 
+      // Sesión de refresh (cookie httpOnly).
+      await issueRefreshSession(res, userFound.id, req.headers['user-agent'] ?? '')
+
       return res.status(200).json({
         token,
         user: {
@@ -143,8 +176,104 @@ export const createAuthController = (userModel: UserModel) => {
     }
   }
 
-  const logout = (_req: Request, res: Response) => {
+  const logout = async (req: Request, res: Response) => {
+    // Invalidar la sesión de refresh en el server, no solo en el cliente.
+    const raw = req.cookies?.[REFRESH_COOKIE] as string | undefined
+    if (raw) {
+      await sessionModel.deleteByHash({ tokenHash: hashRefreshToken(raw) })
+    }
+    clearRefreshCookie(res)
     return res.json({ message: 'Session closed' })
+  }
+
+  const refresh = async (req: Request, res: Response) => {
+    const raw = req.cookies?.[REFRESH_COOKIE] as string | undefined
+
+    if (!raw) {
+      return res.status(401).json({ message: 'No refresh token' })
+    }
+
+    const tokenHash = hashRefreshToken(raw)
+    const session = await sessionModel.findByHash({ tokenHash })
+
+    // No existe (o ya fue rotada/revocada) o venció → 401 y limpiar cookie.
+    if (!session || session.expiresAt.getTime() < Date.now()) {
+      if (session) await sessionModel.deleteByHash({ tokenHash })
+      clearRefreshCookie(res)
+      return res.status(401).json({ message: 'Invalid refresh token' })
+    }
+
+    const user = await userModel.findById({ id: session.userId })
+
+    if (!user) {
+      await sessionModel.deleteByHash({ tokenHash })
+      clearRefreshCookie(res)
+      return res.status(401).json({ message: 'Invalid refresh token' })
+    }
+
+    // Rotación: se descarta el refresh usado y se emite uno nuevo.
+    await sessionModel.deleteByHash({ tokenHash })
+    await issueRefreshSession(res, user.id, req.headers['user-agent'] ?? '')
+
+    const token = await createAccessToken({ id: user.id, role: user.role })
+
+    return res.status(200).json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        emailVerified: user.emailVerified,
+      },
+    })
+  }
+
+  const getSessions = async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' })
+
+    // Id de la sesión actual (para marcarla) sin exponer hashes hacia afuera.
+    const raw = req.cookies?.[REFRESH_COOKIE] as string | undefined
+    const current = raw
+      ? await sessionModel.findByHash({ tokenHash: hashRefreshToken(raw) })
+      : null
+
+    const sessions = await sessionModel.listForUser({ userId: req.user.id })
+
+    return res.json(
+      sessions.map((s) => ({
+        id: s.id,
+        userAgent: s.userAgent,
+        createdAt: s.createdAt,
+        expiresAt: s.expiresAt,
+        current: current ? s.id === current.id : false,
+      }))
+    )
+  }
+
+  const revokeSession = async (req: Request<{ id: string }>, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' })
+
+    const deleted = await sessionModel.deleteById({
+      id: req.params.id,
+      userId: req.user.id,
+    })
+
+    if (!deleted) return res.status(404).json({ message: 'Session not found' })
+
+    return res.json({ message: 'Session revoked' })
+  }
+
+  const revokeOtherSessions = async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' })
+
+    const raw = req.cookies?.[REFRESH_COOKIE] as string | undefined
+    await sessionModel.deleteAllForUser({
+      userId: req.user.id,
+      exceptHash: raw ? hashRefreshToken(raw) : undefined,
+    })
+
+    return res.json({ message: 'Other sessions revoked' })
   }
 
   const forgotPassword = async (req: Request, res: Response) => {
@@ -262,10 +391,14 @@ export const createAuthController = (userModel: UserModel) => {
     register,
     login,
     logout,
+    refresh,
     profile,
     forgotPassword,
     resetPassword,
     verifyEmail,
     resendVerification,
+    getSessions,
+    revokeSession,
+    revokeOtherSessions,
   }
 }
