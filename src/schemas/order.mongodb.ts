@@ -38,7 +38,8 @@ const orderSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: { createdAt: true, updatedAt: false },
+    // updatedAt habilitado: las órdenes cambian de estado y mapDocToOrder lo expone.
+    timestamps: true,
     versionKey: false,
   }
 )

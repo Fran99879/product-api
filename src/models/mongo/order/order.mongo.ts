@@ -90,7 +90,11 @@ export const MongoOrderModel: OrderModel = {
 
       return mapDocToOrder(populated)
     } catch (error) {
-      await session.abortTransaction()
+      // Solo abortar si la transacción sigue activa: si el error ocurre
+      // después del commit, abortTransaction() tiraría y enmascararía el error real.
+      if (session.inTransaction()) {
+        await session.abortTransaction()
+      }
       throw error
     } finally {
       session.endSession()
@@ -103,10 +107,7 @@ export const MongoOrderModel: OrderModel = {
 
     const doc = (await OrderSchema.findByIdAndUpdate(
       id,
-      {
-        ...updateData,
-        updatedAt: new Date(),
-      } as UpdateQuery<OrderDoc>,
+      updateData as UpdateQuery<OrderDoc>,
       { new: true }
     )
       .populate('buyer', '-role')

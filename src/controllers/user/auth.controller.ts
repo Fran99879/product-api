@@ -42,6 +42,15 @@ export const createAuthController = (userModel: UserModel) => {
         },
       })
     } catch (error) {
+      // E11000: índice único de Mongo (email duplicado)
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        (error as { code?: number }).code === 11000
+      ) {
+        return res.status(409).json({ message: 'Email already registered' })
+      }
+
       return res.status(500).json({
         message: "Error registering user",
       });
@@ -60,14 +69,16 @@ export const createAuthController = (userModel: UserModel) => {
     try {
       const userFound = await userModel.findByEmail({ email })
 
+      // Mensaje genérico idéntico para "no existe" y "password mala":
+      // evita user enumeration.
       if (!userFound) {
-        return res.status(400).json({ message: 'User not found' })
+        return res.status(401).json({ message: 'Invalid credentials' })
       }
 
       const isMatch = await bcrypt.compare(password, userFound.password)
 
       if (!isMatch) {
-        return res.status(400).json({ message: 'Incorrect password' })
+        return res.status(401).json({ message: 'Invalid credentials' })
       }
 
       const token = await createAccessToken({
@@ -84,11 +95,9 @@ export const createAuthController = (userModel: UserModel) => {
           role: userFound.role,
         },
       })
-    } catch (error) {
-      return res.status(500).json({
-        message: 'Login error',
-        error: error instanceof Error ? error.message : error
-      })
+    } catch {
+      // No exponer detalles internos del error al cliente.
+      return res.status(500).json({ message: 'Login error' })
     }
   }
 
