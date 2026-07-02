@@ -1,7 +1,12 @@
 import { Router } from "express";
 import { authRequired } from "../middlewares/validateToken.js";
 import { requireRoles } from "../middlewares/role.middleware.js";
-import { getUploadSignature } from "../controllers/upload/upload.controller.js";
+import { validateSchema } from "../middlewares/validate.middleware.js";
+import { deleteUploadSchema } from "../schemas/upload.js";
+import {
+  getUploadSignature,
+  deleteUpload,
+} from "../controllers/upload/upload.controller.js";
 
 const uploadRouter = Router();
 
@@ -11,6 +16,15 @@ uploadRouter.post(
   authRequired,
   requireRoles("seller", "admin"),
   getUploadSignature
+);
+
+// Borrado de asset (limpieza de imágenes huérfanas de la sesión).
+uploadRouter.delete(
+  "/",
+  authRequired,
+  requireRoles("seller", "admin"),
+  validateSchema(deleteUploadSchema),
+  deleteUpload
 );
 
 export default uploadRouter;
