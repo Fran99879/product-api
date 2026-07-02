@@ -17,4 +17,24 @@ export interface UserModel {
   updateRole(params: { id: string; role: UserRole }): Promise<User | null>
 
   getAll(): Promise<User[]>
+
+  // Reset de contraseña (F11.7)
+  setPasswordResetToken(params: {
+    email: string
+    tokenHash: string
+    expires: Date
+  }): Promise<User | null>
+
+  findByValidResetToken(params: { tokenHash: string }): Promise<User | null>
+
+  resetPassword(params: { id: string; passwordHash: string }): Promise<void>
+
+  // Verificación de email (F11.7)
+  setEmailVerificationToken(params: {
+    id: string
+    tokenHash: string
+    expires: Date
+  }): Promise<void>
+
+  verifyEmailByToken(params: { tokenHash: string }): Promise<User | null>
 }

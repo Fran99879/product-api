@@ -22,6 +22,29 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'seller', 'admin'],
       default: 'user',
     },
+    // Reset de contraseña (F11.7). `select:false` → nunca salen en queries
+    // normales. Se guarda el HASH del token, no el token en claro.
+    resetPasswordTokenHash: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
+    },
+    // Verificación de email (F11.7). Mismo criterio: hash + `select:false`.
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationTokenHash: {
+      type: String,
+      select: false,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: true,

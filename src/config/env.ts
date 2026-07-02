@@ -31,6 +31,15 @@ const envSchema = z.object({
 
   // Carpeta destino en Cloudinary (tiene default, no hace falta setearla)
   CLOUDINARY_FOLDER: z.string().default("marketplace/products"),
+
+  // Email SMTP (F11.4) — mails de estado de orden. TODO opcional: si falta la
+  // config, el mailer queda deshabilitado (no rompe la app ni los tests).
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  // Remitente de los mails, ej: "Marketplace <no-reply@marketplace.com>"
+  MAIL_FROM: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

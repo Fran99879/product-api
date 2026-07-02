@@ -2,6 +2,8 @@ import type { Request, Response } from 'express'
 import type { OrderModel } from '../../models/order.model.js'
 import { AppError } from '../../errors/appError.js'
 import { updateOrderStatusSchema } from '../../schemas/order.schema.js'
+import { sendOrderStatusEmail } from '../../emails/order-status.email.js'
+import { logger } from '../../lib/logger.js'
 
 export const createOrderController = ({ orderModel }: { orderModel: OrderModel }) => {
   const getAll = async (req: Request, res: Response) => {
@@ -56,6 +58,11 @@ export const createOrderController = ({ orderModel }: { orderModel: OrderModel }
       throw new AppError('Order not found', 404)
     }
 
+    // Email de estado (best-effort, no bloquea la respuesta).
+    void sendOrderStatusEmail(updated).catch((err) =>
+      logger.error({ err, orderId: updated.id }, 'order status email failed')
+    )
+
     return res.json(updated)
   }
 
@@ -73,6 +80,11 @@ export const createOrderController = ({ orderModel }: { orderModel: OrderModel }
     if (!updated) {
       throw new AppError('Order not found', 404)
     }
+
+    // Email de estado (best-effort, no bloquea la respuesta).
+    void sendOrderStatusEmail(updated).catch((err) =>
+      logger.error({ err, orderId: updated.id }, 'order status email failed')
+    )
 
     return res.json(updated)
   }
