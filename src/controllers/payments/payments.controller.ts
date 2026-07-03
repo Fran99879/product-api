@@ -6,6 +6,7 @@ import { AppError } from '../../errors/appError.js'
 import { ENV } from '../../config/env.js'
 import { mpPreference, mpPayment, validateMpToken } from '../../config/mercadopago.js'
 import { sendOrderStatusEmail } from '../../emails/order-status.email.js'
+import { sendSellerSaleEmail } from '../../emails/seller-sale.email.js'
 import { logger } from '../../lib/logger.js'
 
 const connectSchema = z.object({
@@ -15,13 +16,23 @@ const connectSchema = z.object({
 /** Primera URL de CLIENT_URLS, sin barra final: base del frontend para back_urls. */
 const frontBase = () => ENV.CLIENT_URLS.split(',')[0]!.trim().replace(/\/$/, '')
 
-/** Marca una orden como pagada (best-effort en el email). */
+/** Marca una orden como pagada y notifica por email al comprador y al vendedor. */
 async function markOrderPaid(orderId: string) {
   const updated = await MongoOrderModel.updateStatus(orderId, 'paid')
   if (updated) {
+    // Email al comprador ("Pago confirmado").
     void sendOrderStatusEmail(updated).catch((err) =>
       logger.error({ err, orderId }, 'order status email failed')
     )
+    // Email al vendedor ("Nueva venta pagada"). Una orden = un vendedor.
+    const sellerId = updated.items.map((i) => i.product.owner).find(Boolean)
+    if (sellerId) {
+      void UserMongo.findById(sellerId)
+        .then((seller) =>
+          sendSellerSaleEmail(updated, seller?.get('email') as string | undefined)
+        )
+        .catch((err) => logger.error({ err, orderId }, 'seller sale email failed'))
+    }
   }
   return updated
 }
