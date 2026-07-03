@@ -8,6 +8,10 @@ const envSchema = z.object({
     .string()
     .url("MONGO_URI must be a valid URL"),
 
+  // DB para los tests (opcional): si falta, se deriva de MONGO_URI con el
+  // sufijo "-test". Los tests NUNCA deben correr contra la DB de desarrollo.
+  MONGO_URI_TEST: z.string().optional(),
+
   TOKEN_SECRET: z
     .string()
     .min(10, "TOKEN_SECRET must be at least 10 characters"),
