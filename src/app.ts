@@ -7,6 +7,7 @@ import { createProductRouter } from './routes/product.route.js'
 import authRoutes from './routes/auth.route.js'
 import { createOrderRouter } from './routes/order.route.js'
 import adminRouter from './routes/admin.route.js'
+import paymentsRouter from './routes/payments.route.js'
 import uploadRouter from './routes/upload.route.js'
 import healthRoutes from './routes/health.routes.js'
 import type { ProductModel } from './models/product.model.js'
@@ -47,6 +48,7 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   app.use('/orders', createOrderRouter({ orderModel }))
   app.use('/user', authRoutes)
   app.use('/admin', adminRouter)
+  app.use('/payments', paymentsRouter)
   app.use('/uploads', uploadRouter)
   app.use('/products', createProductRouter({ productModel }))
 

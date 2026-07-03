@@ -20,6 +20,11 @@ const envSchema = z.object({
     .string()
     .min(1, "CLIENT_URLS is required"),
 
+  // URL pública del backend, usada como notification_url de Mercado Pago.
+  // Opcional: en local el webhook no es alcanzable y el pago se confirma al
+  // volver (sync). En producción, seteala a la URL pública de la API.
+  API_PUBLIC_URL: z.string().url().optional(),
+
   // Cloudinary (F11.3) — subida de imágenes de productos
   CLOUDINARY_CLOUD_NAME: z
     .string()

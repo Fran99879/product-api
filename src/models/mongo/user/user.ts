@@ -45,6 +45,12 @@ const userSchema = new mongoose.Schema(
       type: Date,
       select: false,
     },
+    // Mercado Pago (F-pagos): Access Token del vendedor para cobrar en su cuenta.
+    // `select:false` → nunca sale en queries normales; se pide explícito solo al cobrar.
+    mpAccessToken: {
+      type: String,
+      select: false,
+    },
   },
   {
     timestamps: true,
