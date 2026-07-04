@@ -36,6 +36,12 @@ const orderSchema = new mongoose.Schema(
       default: 'pending',
       required: true,
     },
+    // Ubicación/dirección de entrega elegida por el comprador (para que el
+    // vendedor coordine el envío a domicilio).
+    shippingAddress: {
+      type: String,
+      trim: true,
+    },
   },
   {
     // updatedAt habilitado: las órdenes cambian de estado y mapDocToOrder lo expone.

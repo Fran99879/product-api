@@ -12,6 +12,7 @@ export type OrderDoc = Document & {
   items: OrderItemDoc[]
   total: number
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
+  shippingAddress?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -42,6 +43,7 @@ export type PopulatedOrderDoc = Document & {
   items: PopulatedOrderItem[]
   total: number
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
+  shippingAddress?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -70,6 +72,7 @@ export const mapDocToOrder = (doc: PopulatedOrderDoc): Order => ({
   })),
   total: doc.total,
   status: doc.status,
+  shippingAddress: doc.shippingAddress,
   createdAt: doc.createdAt.toISOString(),
   updatedAt: doc.updatedAt.toISOString(),
 })

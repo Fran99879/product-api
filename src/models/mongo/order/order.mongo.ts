@@ -67,6 +67,7 @@ export const MongoOrderModel: OrderModel = {
             items,
             total,
             status: 'pending',
+            shippingAddress: input.shippingAddress,
           },
         ],
         { session }

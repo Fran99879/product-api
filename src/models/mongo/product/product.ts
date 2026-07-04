@@ -22,7 +22,8 @@ const mapDocToProduct = (doc: any): Product => ({
   owner: String(doc.owner),
   quantity: doc.quantity,
   isActive: doc.isActive,
-  specs: doc.specs ? Object.fromEntries(doc.specs) : {},
+  // `find()` devuelve specs como Map; `aggregate()` como objeto plano.
+  specs: doc.specs instanceof Map ? Object.fromEntries(doc.specs) : (doc.specs ?? {}),
 })
 
 
@@ -61,6 +62,10 @@ const buildFilter = (query: ProductQuery): Record<string, unknown> => {
 
   if (query.inStock) filter.quantity = { $gt: 0 }
 
+  // Catálogo público: no mostrar productos inactivos. El admin puede pedir
+  // verlos con includeInactive=true (para moderación).
+  if (!query.includeInactive) filter.isActive = true
+
   return filter
 }
 
@@ -69,8 +74,18 @@ export const MongoProductModel: ProductModel = {
     const filter = buildFilter(query)
     const skip = (query.page - 1) * query.limit
 
+    // Los productos sin stock se muestran al final de la lista, sin importar el
+    // orden elegido: se ordena primero por "sin stock" y después por el sort.
+    const sortStage = { _outOfStock: 1, ...SORT_MAP[query.sort] } as Record<string, 1 | -1>
+
     const [docs, total] = await Promise.all([
-      ProductSchema.find(filter).sort(SORT_MAP[query.sort]).skip(skip).limit(query.limit),
+      ProductSchema.aggregate([
+        { $match: filter },
+        { $addFields: { _outOfStock: { $cond: [{ $lte: ['$quantity', 0] }, 1, 0] } } },
+        { $sort: sortStage },
+        { $skip: skip },
+        { $limit: query.limit },
+      ]),
       ProductSchema.countDocuments(filter),
     ])
 

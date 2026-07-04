@@ -75,6 +75,13 @@ export const productQuerySchema = z.object({
     .transform((v) => v === 'true')
     .optional(),
 
+  // "true" → incluir inactivos (uso admin/moderación). El catálogo público
+  // por defecto NO muestra productos inactivos.
+  includeInactive: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+
   sort: z.enum(PRODUCT_SORT_OPTIONS).default('recent'),
 
   page: z.coerce.number().int().min(1).default(1),

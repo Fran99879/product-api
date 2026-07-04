@@ -8,6 +8,8 @@ export const orderItemSchema = z.object({
 
 export const createOrderSchema = z.object({
   items: z.array(orderItemSchema).min(1, { message: 'At least one item is required' }),
+  // Dirección/ubicación de entrega (opcional), para coordinar el envío.
+  shippingAddress: z.string().trim().max(200).optional(),
 })
 
 export const updateOrderStatusSchema = z.object({
@@ -48,6 +50,7 @@ export type Order = {
   items: OrderItem[]
   total: number
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
+  shippingAddress?: string
   createdAt: string
   updatedAt: string
 }
