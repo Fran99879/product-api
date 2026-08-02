@@ -42,6 +42,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    // Clave de idempotencia (opcional): evita órdenes duplicadas ante doble-click
+    // o reintentos. El índice único sparse garantiza que no se repita.
+    idempotencyKey: {
+      type: String,
+    },
   },
   {
     // updatedAt habilitado: las órdenes cambian de estado y mapDocToOrder lo expone.
@@ -49,5 +54,8 @@ const orderSchema = new mongoose.Schema(
     versionKey: false,
   }
 )
+
+// Único solo cuando la clave existe (sparse): órdenes sin clave no chocan entre sí.
+orderSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true })
 
 export const Order = mongoose.model('Order', orderSchema)

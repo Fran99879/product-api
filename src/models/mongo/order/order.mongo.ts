@@ -12,8 +12,42 @@ import {
 import { orderQueries } from './order.queries.js'
 import { orderStatusMethods } from './order.status.js'
 
+/** Detecta el error E11000 de índice único de Mongo (clave duplicada). */
+const isDuplicateKeyError = (e: unknown): boolean =>
+  typeof e === 'object' && e !== null && 'code' in e && (e as { code?: number }).code === 11000
+
+/** Query de mongoose encadenable por populate (mongoose muta y devuelve la misma query). */
+interface PopulatableQuery {
+  populate(path: string, select: string): PopulatableQuery
+  populate(opts: unknown): PopulatableQuery
+}
+
+/** Populate compartido para devolver una orden completa (comprador + producto + owner). */
+const populateOrder = <T>(query: T): T => {
+  ;(query as unknown as PopulatableQuery)
+    .populate('buyer', 'username email')
+    .populate({
+      path: 'items.product',
+      select: '-quantity',
+      populate: { path: 'owner', select: 'username' },
+    })
+  return query
+}
+
 export const MongoOrderModel: OrderModel = {
   async create(input) {
+    // Idempotencia: si ya existe una orden con esta clave para el mismo comprador,
+    // la devolvemos tal cual en vez de crear un duplicado (doble-click / reintento).
+    if (input.idempotencyKey) {
+      const existing = (await populateOrder(
+        OrderSchema.findOne({
+          idempotencyKey: input.idempotencyKey,
+          buyer: new Types.ObjectId(input.buyer),
+        })
+      )) as PopulatedOrderDoc | null
+      if (existing) return mapDocToOrder(existing)
+    }
+
     const session = await mongoose.startSession()
 
     try {
@@ -29,6 +63,7 @@ export const MongoOrderModel: OrderModel = {
           price: number
           discountPercent?: number
           quantity: number
+          isActive?: boolean
           name?: string
         }
       >
@@ -39,6 +74,10 @@ export const MongoOrderModel: OrderModel = {
 
       const items: OrderItemDoc[] = input.items.map((i) => {
         const p = products.find((pp) => pp._id.equals(i.product))!
+
+        if (p.isActive === false) {
+          throw new Error(`Product "${p.name || p._id.toString()}" is not available`)
+        }
 
         if (p.quantity < i.quantity) {
           throw new Error(`Insufficient stock for product ${p.name || p._id.toString()}`)
@@ -73,6 +112,7 @@ export const MongoOrderModel: OrderModel = {
             total,
             status: 'pending',
             shippingAddress: input.shippingAddress,
+            idempotencyKey: input.idempotencyKey,
           },
         ],
         { session }
@@ -84,13 +124,9 @@ export const MongoOrderModel: OrderModel = {
       }
       await session.commitTransaction()
 
-      const populated = (await OrderSchema.findById(created._id)
-        .populate('buyer', 'username email')
-        .populate({
-          path: 'items.product',
-          select: '-quantity',
-          populate: { path: 'owner', select: 'username' },
-        })) as PopulatedOrderDoc | null
+      const populated = (await populateOrder(
+        OrderSchema.findById(created._id)
+      )) as PopulatedOrderDoc | null
 
       if (!populated) throw new Error('Failed to retrieve created order')
 
@@ -100,6 +136,17 @@ export const MongoOrderModel: OrderModel = {
       // después del commit, abortTransaction() tiraría y enmascararía el error real.
       if (session.inTransaction()) {
         await session.abortTransaction()
+      }
+      // Carrera: otra request con la misma idempotencyKey ganó y el índice único
+      // rechazó esta. Devolvemos la orden que sí se creó, sin duplicar.
+      if (input.idempotencyKey && isDuplicateKeyError(error)) {
+        const existing = (await populateOrder(
+          OrderSchema.findOne({
+            idempotencyKey: input.idempotencyKey,
+            buyer: new Types.ObjectId(input.buyer),
+          })
+        )) as PopulatedOrderDoc | null
+        if (existing) return mapDocToOrder(existing)
       }
       throw error
     } finally {

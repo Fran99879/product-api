@@ -142,6 +142,60 @@ describe("Orders", () => {
         expect(shippedRes.status).toBe(200);
     });
 
+    // 🧪 4b. no comprar productos inactivos
+    it("should NOT allow ordering an inactive product", async () => {
+        const inactive = await Product.create({
+            name: "Inactivo",
+            brand: "Apple",
+            category: "smartphone",
+            model: "OFF",
+            price: 1000,
+            quantity: 5,
+            isActive: false,
+            image: "https://test.com",
+            owner: sellerId,
+        });
+
+        const res = await request(app)
+            .post("/orders")
+            .set("Authorization", `Bearer ${buyerToken}`)
+            .send({ items: [{ product: inactive._id.toString(), quantity: 1 }] });
+
+        expect(res.status).toBeGreaterThanOrEqual(400);
+
+        // El stock no se tocó.
+        const after = await Product.findById(inactive._id);
+        expect(after?.quantity).toBe(5);
+    });
+
+    // 🧪 4c. idempotencia: doble request con la misma clave = una sola orden
+    it("should be idempotent with the same idempotencyKey", async () => {
+        const key = "idem-test-key-123456";
+        const body = {
+            items: [{ product: productId, quantity: 2 }],
+            idempotencyKey: key,
+        };
+
+        const first = await request(app)
+            .post("/orders")
+            .set("Authorization", `Bearer ${buyerToken}`)
+            .send(body);
+        expect(first.status).toBe(201);
+
+        const second = await request(app)
+            .post("/orders")
+            .set("Authorization", `Bearer ${buyerToken}`)
+            .send(body);
+        expect(second.status).toBe(201);
+
+        // Misma orden devuelta, no una nueva.
+        expect(second.body.id).toBe(first.body.id);
+
+        // El stock se descontó una sola vez (5 - 2 = 3).
+        const product = await Product.findById(productId);
+        expect(product?.quantity).toBe(3);
+    });
+
     // 🧪 5. transición inválida
     it("should NOT allow invalid status transition", async () => {
         const createRes = await request(app)
