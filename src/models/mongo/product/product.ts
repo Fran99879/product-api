@@ -14,6 +14,7 @@ const mapDocToProduct = (doc: any): Product => ({
   name: doc.name,
   description: doc.description,
   price: doc.price,
+  discountPercent: doc.discountPercent ?? 0,
   image: doc.image,
   brand: doc.brand,
   category: doc.category,

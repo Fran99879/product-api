@@ -27,6 +27,7 @@ export const MongoOrderModel: OrderModel = {
         Document & {
           _id: Types.ObjectId
           price: number
+          discountPercent?: number
           quantity: number
           name?: string
         }
@@ -43,10 +44,14 @@ export const MongoOrderModel: OrderModel = {
           throw new Error(`Insufficient stock for product ${p.name || p._id.toString()}`)
         }
 
+        // Precio efectivo con la oferta aplicada (misma fórmula que el front).
+        const pct = Math.min(95, Math.max(0, Math.round(p.discountPercent ?? 0)))
+        const unitPrice = pct > 0 ? Math.round(p.price * (1 - pct / 100)) : p.price
+
         return {
           product: new Types.ObjectId(i.product),
           quantity: i.quantity,
-          price: p.price,
+          price: unitPrice,
         }
       })
 

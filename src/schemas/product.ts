@@ -26,6 +26,9 @@ export const productSchema = z.object({
 
   price: z.number().int().positive({ message: 'Price must be a positive integer' }),
 
+  // Descuento de oferta (%). 0 = sin oferta. El precio final se deriva del price.
+  discountPercent: z.number().int().min(0).max(95).default(0),
+
   image: z.string().url({ message: 'Image must be a valid URL' }),
 
   brand: z.string().min(1, { message: 'Brand is required' }).trim(),

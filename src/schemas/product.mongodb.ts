@@ -20,6 +20,15 @@ const productSchema = new mongoose.Schema(
       min: 1,
     },
 
+    // Descuento de oferta en porcentaje (0 = sin oferta). El precio final se
+    // calcula en el front: price * (1 - discountPercent / 100).
+    discountPercent: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 95,
+    },
+
     image: {
       type: String,
       required: true,
