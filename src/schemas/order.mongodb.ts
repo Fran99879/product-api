@@ -58,4 +58,12 @@ const orderSchema = new mongoose.Schema(
 // Único solo cuando la clave existe (sparse): órdenes sin clave no chocan entre sí.
 orderSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true })
 
+// Índices para los listados (Sprint 5 — perf): todos ordenan por más reciente.
+// - "mis pedidos" (getByUser) y getAll con filtro por comprador
+orderSchema.index({ buyer: 1, createdAt: -1 })
+// - pedidos del vendedor (getSellerOrders) y getAll con filtro por producto
+orderSchema.index({ 'items.product': 1, createdAt: -1 })
+// - getAll sin filtro (admin), ordenado por más reciente
+orderSchema.index({ createdAt: -1 })
+
 export const Order = mongoose.model('Order', orderSchema)

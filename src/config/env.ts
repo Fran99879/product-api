@@ -25,6 +25,12 @@ const envSchema = z.object({
   // volver (sync). En producción, seteala a la URL pública de la API.
   API_PUBLIC_URL: z.string().url().optional(),
 
+  // Secreto para validar la firma (x-signature) del webhook de Mercado Pago.
+  // Opcional: sin él no se puede verificar la firma (en local se omite y el pago
+  // se confirma re-consultando a la API de MP). En producción, seteala con el
+  // valor del panel de MP para rechazar webhooks no auténticos.
+  MP_WEBHOOK_SECRET: z.string().optional(),
+
   // Cloudinary (F11.3) — subida de imágenes de productos
   CLOUDINARY_CLOUD_NAME: z
     .string()

@@ -5,6 +5,11 @@ import type { OrderModel } from '../../order.model.js'
 
 import { mapDocToOrder, type PopulatedOrderDoc } from './order.types.js'
 
+// Tope de resultados de los listados de órdenes: evita traer toda la colección
+// (riesgo de OOM/timeout a escala). Se devuelven las más recientes. La
+// paginación con UI queda para un sprint de frontend.
+const ORDER_LIST_LIMIT = 100
+
 export const orderQueries: Pick<
   OrderModel,
   'getById' | 'getAll' | 'getByUser' | 'getSellerOrders'
@@ -38,6 +43,7 @@ export const orderQueries: Pick<
 
     const docs = (await OrderSchema.find(query)
       .sort({ createdAt: -1 })
+      .limit(ORDER_LIST_LIMIT)
       .populate('buyer', '-role')
       .populate({
         path: 'items.product',
@@ -52,7 +58,8 @@ export const orderQueries: Pick<
     buyer: new Types.ObjectId(userId),
   })
     .sort({ createdAt: -1 })
-    .populate('buyer', '-role') 
+    .limit(ORDER_LIST_LIMIT)
+    .populate('buyer', '-role')
     .populate({
       path: 'items.product',
       select: '-quantity',
@@ -73,6 +80,7 @@ export const orderQueries: Pick<
     'items.product': { $in: sellerProducts },
   })
     .sort({ createdAt: -1 })
+    .limit(ORDER_LIST_LIMIT)
     .populate('buyer', '-role')
     .populate({
       path: 'items.product',

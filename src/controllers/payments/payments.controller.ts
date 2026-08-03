@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express'
+import crypto from 'node:crypto'
 import { z } from 'zod'
 import { UserMongo } from '../../models/mongo/user/user.js'
+import { encryptSecret, decryptSecret } from '../../utils/secretCrypto.js'
 import { MongoOrderModel } from '../../models/mongo/order/order.mongo.js'
 import { AppError } from '../../errors/appError.js'
 import { ENV } from '../../config/env.js'
@@ -53,12 +55,13 @@ async function getSellerTokenForOrder(order: {
 
   const sellerId = owners[0]!
   const seller = await UserMongo.findById(sellerId).select('+mpAccessToken')
-  const token = seller?.get('mpAccessToken') as string | undefined
+  const stored = seller?.get('mpAccessToken') as string | undefined
 
-  if (!token) {
+  if (!stored) {
     throw new AppError('El vendedor todavía no configuró Mercado Pago', 409)
   }
-  return { sellerId, token }
+  // El token se guarda cifrado en la DB; se descifra solo acá, al momento de cobrar.
+  return { sellerId, token: decryptSecret(stored) }
 }
 
 // ---------------------------------------------------------------------------
@@ -84,7 +87,10 @@ const connect = async (req: Request, res: Response) => {
     throw new AppError('El Access Token no es válido o no está activo en Mercado Pago', 400)
   }
 
-  await UserMongo.findByIdAndUpdate(req.user.id, { mpAccessToken: accessToken })
+  // Se guarda cifrado en reposo: si la DB se compromete, el token no queda expuesto.
+  await UserMongo.findByIdAndUpdate(req.user.id, {
+    mpAccessToken: encryptSecret(accessToken),
+  })
   res.json({ connected: true })
 }
 
@@ -185,11 +191,58 @@ const confirmPayment = async (req: Request<{ id: string }>, res: Response) => {
 // Webhook de Mercado Pago (notificaciones automáticas de pago)
 // ---------------------------------------------------------------------------
 
+/**
+ * Verifica la firma `x-signature` del webhook de Mercado Pago (HMAC-SHA256).
+ * Manifest según MP: `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`.
+ * Sin `MP_WEBHOOK_SECRET` configurado (dev/local) no se puede verificar: se
+ * devuelve true y la autenticidad se apoya en re-consultar el pago a la API de MP.
+ */
+const verifyMpWebhook = (req: Request): boolean => {
+  const secret = ENV.MP_WEBHOOK_SECRET
+  if (!secret) return true
+
+  const xSignature = req.headers['x-signature'] as string | undefined
+  const xRequestId = req.headers['x-request-id'] as string | undefined
+  if (!xSignature) return false
+
+  // "ts=1699000000,v1=abcdef..."
+  const parts = Object.fromEntries(
+    xSignature.split(',').map((kv) => {
+      const [k, v] = kv.split('=')
+      return [k?.trim() ?? '', v?.trim() ?? '']
+    })
+  ) as Record<string, string>
+
+  const ts = parts.ts
+  const v1 = parts.v1
+  if (!ts || !v1) return false
+
+  const dataId =
+    (req.query['data.id'] as string | undefined) ??
+    (req.body?.data?.id as string | undefined) ??
+    ''
+
+  const manifest = `id:${dataId};request-id:${xRequestId ?? ''};ts:${ts};`
+  const expected = crypto.createHmac('sha256', secret).update(manifest).digest('hex')
+
+  try {
+    return crypto.timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(v1, 'hex'))
+  } catch {
+    return false
+  }
+}
+
 const webhook = async (req: Request, res: Response) => {
   // Siempre responder 200 rápido para que MP no reintente en loop.
   res.sendStatus(200)
 
   try {
+    // Rechazar (silenciosamente, ya respondimos 200) los webhooks con firma inválida.
+    if (!verifyMpWebhook(req)) {
+      logger.warn('mercadopago webhook: firma inválida, ignorado')
+      return
+    }
+
     const orderId = req.query.orderId as string | undefined
     const type = (req.body?.type ?? req.query.type) as string | undefined
     const dataId =

@@ -18,16 +18,8 @@ export const canEditProduct = (productModel: ProductModel) => {
       return next(new AppError('Product not found', 404))
     }
 
-    console.log("OWNER =", product?.owner)
-    console.log("USER =", user.id)
-    console.log("ROLE =", user.role)
-
-    if (product.owner !== user.id && user.role !== "admin") {
-      return res.status(403).json({
-        productOwner: product.owner,
-        userId: user.id,
-        role: user.role,
-      })
+    if (product.owner !== user.id && user.role !== 'admin') {
+      return next(new AppError('Forbidden', 403))
     }
 
     req.product = product

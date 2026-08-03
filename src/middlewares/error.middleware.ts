@@ -9,6 +9,8 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) =>
   let message = 'Internal Server Error'
   let errors: unknown = undefined
 
+  const isDev = process.env.NODE_ENV === 'development'
+
   if (err instanceof AppError) {
     statusCode = err.statusCode
     message = err.message
@@ -16,11 +18,11 @@ export const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) =>
     statusCode = 400
     message = 'Validation error'
     errors = err.issues
-  } else if (err instanceof Error) {
+  } else if (err instanceof Error && isDev) {
+    // Error no controlado: el mensaje real se expone SOLO en desarrollo; en
+    // producción se mantiene el genérico para no filtrar detalles internos.
     message = err.message
   }
-
-  const isDev = process.env.NODE_ENV === 'development'
 
   logger.error({
     requestId: req.requestId,
