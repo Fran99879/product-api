@@ -60,12 +60,13 @@ describe("Google OAuth — POST /user/google", () => {
     expect(await UserMongo.countDocuments({ email: "guser@gmail.com" })).toBe(1);
   });
 
-  it("vincula una cuenta local existente con el mismo email", async () => {
+  it("vincula una cuenta local existente con el mismo email (y la deja verificada)", async () => {
     await UserMongo.create({
       username: "local",
       email: "guser@gmail.com",
       password: await bcrypt.hash("secret1", 10),
       provider: "local",
+      emailVerified: false,
     });
 
     verifyMock.mockResolvedValue(googlePayload());
@@ -75,6 +76,8 @@ describe("Google OAuth — POST /user/google", () => {
     const doc = await UserMongo.findOne({ email: "guser@gmail.com" });
     expect(doc?.get("provider")).toBe("google");
     expect(doc?.get("providerId")).toBe("google-sub-123");
+    // Google ya verificó el email → la cuenta local queda verificada.
+    expect(doc?.get("emailVerified")).toBe(true);
     expect(await UserMongo.countDocuments({ email: "guser@gmail.com" })).toBe(1);
   });
 
@@ -94,5 +97,18 @@ describe("Google OAuth — POST /user/google", () => {
   it("valida el body sin idToken (400)", async () => {
     const res = await request(app).post("/user/google").send({});
     expect(res.status).toBe(400);
+  });
+
+  it("una cuenta de Google (sin contraseña) NO puede usar el login tradicional", async () => {
+    // Se crea la cuenta vía Google (sin contraseña).
+    verifyMock.mockResolvedValue(googlePayload());
+    await request(app).post("/user/google").send({ idToken: "x" });
+
+    // Intentar login con email+contraseña → credenciales inválidas (401).
+    const res = await request(app)
+      .post("/user/login")
+      .send({ email: "guser@gmail.com", password: "cualquier-cosa" });
+
+    expect(res.status).toBe(401);
   });
 });

@@ -41,9 +41,10 @@ export const MongoUserModel: UserModel = {
 
   async linkGoogleAccount({ id, providerId }) {
     if (!mongoose.Types.ObjectId.isValid(id)) return null
+    // Google ya verificó el email → la cuenta queda con emailVerified true.
     const doc = await UserMongo.findByIdAndUpdate(
       id,
-      { provider: 'google', providerId },
+      { provider: 'google', providerId, emailVerified: true },
       { new: true }
     )
     return doc ? mapDocToUser(doc) : null

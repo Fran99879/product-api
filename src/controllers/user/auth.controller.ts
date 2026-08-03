@@ -442,12 +442,14 @@ export const createAuthController = (
     try {
       // 1) Ya vinculada por providerId → login directo.
       let user = await userModel.findByProviderId({ providerId })
+      let event: 'login' | 'link' | 'register' = 'login'
 
       // 2) Existe una cuenta con ese email → vincularla con Google.
       if (!user) {
         const existing = await userModel.findByEmail({ email })
         if (existing) {
           user = await userModel.linkGoogleAccount({ id: existing.id, providerId })
+          event = 'link'
         }
       }
 
@@ -463,11 +465,15 @@ export const createAuthController = (
             emailVerified: true,
           },
         })
+        event = 'register'
       }
 
       if (!user) {
         return res.status(500).json({ message: 'No se pudo iniciar sesión con Google' })
       }
+
+      // Auditoría: registro/vinculación/login vía Google (sin datos sensibles).
+      logger.info({ userId: user.id, event: `google_${event}` }, 'google auth')
 
       const token = await createAccessToken({ id: user.id, role: user.role })
       await issueRefreshSession(res, user.id, req.headers['user-agent'] ?? '')
