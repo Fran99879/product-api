@@ -15,7 +15,20 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+      // Requerida solo para cuentas locales; las de Google no tienen contraseña.
+      required: function (this: { provider?: string }) {
+        return this.provider !== 'google'
+      },
+    },
+    // Proveedor de autenticación: 'local' (email + contraseña) o 'google' (OAuth).
+    provider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
+    },
+    // ID del usuario en el proveedor externo (el `sub` de Google). Solo OAuth.
+    providerId: {
+      type: String,
     },
     role: {
       type: String,
@@ -56,5 +69,8 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   }
 )
+
+// Único por proveedor externo (sparse: solo cuentas OAuth lo tienen).
+userSchema.index({ providerId: 1 }, { unique: true, sparse: true })
 
 export const UserMongo = mongoose.model('User', userSchema)

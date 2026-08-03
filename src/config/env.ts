@@ -31,6 +31,11 @@ const envSchema = z.object({
   // valor del panel de MP para rechazar webhooks no auténticos.
   MP_WEBHOOK_SECRET: z.string().optional(),
 
+  // Google OAuth (Sprint 1) — Client ID para verificar el ID Token de Google.
+  // Opcional: sin él, el login con Google queda deshabilitado (el login
+  // tradicional sigue funcionando). Se obtiene en Google Cloud Console.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
   // Cloudinary (F11.3) — subida de imágenes de productos
   CLOUDINARY_CLOUD_NAME: z
     .string()

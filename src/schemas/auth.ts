@@ -14,6 +14,13 @@ export const validateRegister = (input: unknown) => {
   return registerSchema.safeParse(input)
 }
 
+// Login con Google: el frontend manda el ID Token que devuelve Google.
+export const googleAuthSchema = z.object({
+  idToken: z.string().min(1, 'idToken is required'),
+})
+
+export const validateGoogleAuth = (input: unknown) => googleAuthSchema.safeParse(input)
+
 export const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email'),
 

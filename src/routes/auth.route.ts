@@ -11,6 +11,7 @@ const authController = createAuthController(MongoUserModel, MongoSessionModel)
 
 authRouter.post('/register', authLimiter, authController.register)
 authRouter.post('/login', authLimiter, authController.login)
+authRouter.post('/google', authLimiter, authController.googleAuth)
 authRouter.post('/logout', authController.logout)
 authRouter.post('/refresh', authLimiter, authController.refresh)
 

@@ -8,7 +8,9 @@ import {
   validateForgotPassword,
   validateResetPassword,
   validateVerifyEmail,
+  validateGoogleAuth,
 } from '../../schemas/auth.js'
+import { googleEnabled, verifyGoogleIdToken } from '../../config/google.js'
 import { sendPasswordResetEmail } from '../../emails/password-reset.email.js'
 import { sendEmailVerificationEmail } from '../../emails/email-verification.email.js'
 import { logger } from '../../lib/logger.js'
@@ -143,6 +145,11 @@ export const createAuthController = (
       // Mensaje genérico idéntico para "no existe" y "password mala":
       // evita user enumeration.
       if (!userFound) {
+        return res.status(401).json({ message: 'Invalid credentials' })
+      }
+
+      // Cuentas de Google no tienen contraseña: el login tradicional no aplica.
+      if (!userFound.password) {
         return res.status(401).json({ message: 'Invalid credentials' })
       }
 
@@ -387,6 +394,103 @@ export const createAuthController = (
     return res.status(200).json({ message: 'Te reenviamos el email de verificación.' })
   }
 
+  // Respuesta común de auth (mismo shape que login/register para reusar el front).
+  const authResponse = (
+    res: Response,
+    user: { id: string; username: string; email: string; role: string; emailVerified: boolean },
+    token: string
+  ) =>
+    res.status(200).json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        emailVerified: user.emailVerified,
+      },
+    })
+
+  const googleAuth = async (req: Request, res: Response) => {
+    if (!googleEnabled) {
+      return res.status(503).json({ message: 'Login con Google no disponible' })
+    }
+
+    const result = validateGoogleAuth(req.body)
+    if (!result.success) {
+      return res.status(400).json({ errors: result.error.issues })
+    }
+
+    let payload
+    try {
+      payload = await verifyGoogleIdToken(result.data.idToken)
+    } catch {
+      return res.status(401).json({ message: 'Token de Google inválido' })
+    }
+
+    const providerId = payload.sub
+    const email = payload.email
+    if (!providerId || !email) {
+      return res.status(401).json({ message: 'Token de Google inválido' })
+    }
+    // Seguridad: solo confiamos en emails verificados por Google (evita account
+    // takeover al vincular una cuenta local por email).
+    if (!payload.email_verified) {
+      return res.status(401).json({ message: 'El email de Google no está verificado' })
+    }
+
+    try {
+      // 1) Ya vinculada por providerId → login directo.
+      let user = await userModel.findByProviderId({ providerId })
+
+      // 2) Existe una cuenta con ese email → vincularla con Google.
+      if (!user) {
+        const existing = await userModel.findByEmail({ email })
+        if (existing) {
+          user = await userModel.linkGoogleAccount({ id: existing.id, providerId })
+        }
+      }
+
+      // 3) No existe → registro automático (sin contraseña, email ya verificado).
+      if (!user) {
+        user = await userModel.create({
+          input: {
+            username: payload.name || email.split('@')[0] || email,
+            email,
+            role: 'user',
+            provider: 'google',
+            providerId,
+            emailVerified: true,
+          },
+        })
+      }
+
+      if (!user) {
+        return res.status(500).json({ message: 'No se pudo iniciar sesión con Google' })
+      }
+
+      const token = await createAccessToken({ id: user.id, role: user.role })
+      await issueRefreshSession(res, user.id, req.headers['user-agent'] ?? '')
+      return authResponse(res, user, token)
+    } catch (error) {
+      // Carrera: índice único (email/providerId) → reintentar login por providerId.
+      if (
+        error instanceof Error &&
+        'code' in error &&
+        (error as { code?: number }).code === 11000
+      ) {
+        const existing = await userModel.findByProviderId({ providerId })
+        if (existing) {
+          const token = await createAccessToken({ id: existing.id, role: existing.role })
+          await issueRefreshSession(res, existing.id, req.headers['user-agent'] ?? '')
+          return authResponse(res, existing, token)
+        }
+      }
+      logger.error({ err: error }, 'google auth failed')
+      return res.status(500).json({ message: 'Error al iniciar sesión con Google' })
+    }
+  }
+
   return {
     register,
     login,
@@ -400,5 +504,6 @@ export const createAuthController = (
     getSessions,
     revokeSession,
     revokeOtherSessions,
+    googleAuth,
   }
 }

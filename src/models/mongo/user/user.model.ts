@@ -11,6 +11,8 @@ const mapDocToUser = (doc: any): User => ({
   password: doc.password,
   role: doc.role,
   emailVerified: doc.emailVerified ?? false,
+  provider: doc.provider ?? 'local',
+  providerId: doc.providerId,
   createdAt: doc.createdAt,
   updatedAt: doc.updatedAt,
 })
@@ -27,9 +29,24 @@ export const MongoUserModel: UserModel = {
     return doc ? mapDocToUser(doc) : null
   },
 
+  async findByProviderId({ providerId }) {
+    const doc = await UserMongo.findOne({ providerId })
+    return doc ? mapDocToUser(doc) : null
+  },
+
   async create({ input }) {
     const doc = await UserMongo.create(input)
     return mapDocToUser(doc)
+  },
+
+  async linkGoogleAccount({ id, providerId }) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null
+    const doc = await UserMongo.findByIdAndUpdate(
+      id,
+      { provider: 'google', providerId },
+      { new: true }
+    )
+    return doc ? mapDocToUser(doc) : null
   },
 
   async updateRole({ id, role }) {

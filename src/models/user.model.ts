@@ -1,18 +1,28 @@
-import type { User, UserRole } from '../types/user.js'
+import type { AuthProvider, User, UserRole } from '../types/user.js'
 
 export interface UserModel {
   findByEmail(params: { email: string }): Promise<User | null>
 
   findById(params: { id: string }): Promise<User | null>
 
+  // Google OAuth: buscar por el ID del proveedor externo.
+  findByProviderId(params: { providerId: string }): Promise<User | null>
+
   create(params: {
     input: {
       username: string
       email: string
-      password: string
+      // Opcional: las cuentas de Google no tienen contraseña.
+      password?: string
       role?: UserRole
+      provider?: AuthProvider
+      providerId?: string
+      emailVerified?: boolean
     }
   }): Promise<User>
+
+  // Google OAuth: vincular una cuenta existente (por email) con Google.
+  linkGoogleAccount(params: { id: string; providerId: string }): Promise<User | null>
 
   updateRole(params: { id: string; role: UserRole }): Promise<User | null>
 
