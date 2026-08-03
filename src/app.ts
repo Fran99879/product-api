@@ -1,5 +1,6 @@
 import express, { json, type Application } from 'express'
 import morgan from 'morgan'
+import compression from 'compression'
 import cookieParser from 'cookie-parser'
 
 import { corsMiddleware } from './middlewares/cors.js'
@@ -30,8 +31,12 @@ export const createApp = ({ productModel, orderModel }: CreateAppDependencies): 
   const app = express()
 
   app.use(helmet())
+  // Compresión gzip/brotli de las respuestas (menos ancho de banda, mejor TTFB).
+  app.use(compression())
   app.use(globalLimiter)
-  app.use(morgan('dev'))
+  // Formato de log según entorno: 'dev' (coloreado, conciso) en desarrollo;
+  // 'combined' (estándar Apache) en producción.
+  app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'))
   app.use(corsMiddleware())
   app.use(json())
   app.use(cookieParser())

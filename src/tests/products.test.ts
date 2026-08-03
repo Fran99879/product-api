@@ -168,7 +168,10 @@ describe("Products", () => {
     it("should sort by price", async () => {
       const res = await request(app).get("/products?sort=price-asc");
       const prices = res.body.data.map((p: any) => p.price);
-      expect(prices).toEqual([800, 1200, 2000]);
+      // El catálogo ordena los productos SIN stock al final (Galaxy S24, $800,
+      // quantity 0), sin importar el sort elegido. Por eso el orden esperado es
+      // los con stock por precio asc (1200, 2000) y el sin stock (800) último.
+      expect(prices).toEqual([1200, 2000, 800]);
     });
 
     it("should paginate", async () => {

@@ -40,7 +40,7 @@ export const canCancelOrder = (orderModel: OrderModel) => {
       return next(new AppError('Order not found', 404))
     }
 
-    if (order.buyer.toString() !== user.id && user.role !== 'admin') {
+    if (order.buyer.id !== user.id && user.role !== 'admin') {
       return next(new AppError('Forbidden', 403))
     }
 
@@ -62,7 +62,7 @@ export const canUpdateOrderAddress = (orderModel: OrderModel) => {
       return next(new AppError('Order not found', 404))
     }
 
-    if (order.buyer.toString() !== user.id && user.role !== 'admin') {
+    if (order.buyer.id !== user.id && user.role !== 'admin') {
       return next(new AppError('Forbidden', 403))
     }
 

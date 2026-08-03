@@ -221,4 +221,119 @@ describe("Orders", () => {
 
         expect(invalidRes.status).toBeGreaterThanOrEqual(400);
     });
+
+    // 🧪 6. cancelar una orden pending repone el stock
+    it("should restore stock when cancelling a pending order", async () => {
+        const createRes = await request(app)
+            .post("/orders")
+            .set("Authorization", `Bearer ${buyerToken}`)
+            .send({ items: [{ product: productId, quantity: 2 }] });
+
+        const orderId = createRes.body.id;
+
+        // stock descontado: 5 → 3
+        expect((await Product.findById(productId))?.quantity).toBe(3);
+
+        const cancelRes = await request(app)
+            .patch(`/orders/${orderId}/cancel`)
+            .set("Authorization", `Bearer ${buyerToken}`);
+
+        expect(cancelRes.status).toBe(200);
+        expect(cancelRes.body.status).toBe("cancelled");
+
+        // stock repuesto: 3 → 5
+        expect((await Product.findById(productId))?.quantity).toBe(5);
+    });
+
+    // 🧪 7. un usuario no puede cancelar la orden de otro
+    it("should NOT allow another user to cancel someone else's order", async () => {
+        const createRes = await request(app)
+            .post("/orders")
+            .set("Authorization", `Bearer ${buyerToken}`)
+            .send({ items: [{ product: productId, quantity: 1 }] });
+
+        const orderId = createRes.body.id;
+
+        await request(app).post("/user/register").send({
+            username: "intruso",
+            email: "intruso@test.com",
+            password: "123456",
+        });
+        const intruderToken = (
+            await request(app).post("/user/login").send({
+                email: "intruso@test.com",
+                password: "123456",
+            })
+        ).body.token;
+
+        const res = await request(app)
+            .patch(`/orders/${orderId}/cancel`)
+            .set("Authorization", `Bearer ${intruderToken}`);
+
+        expect(res.status).toBeGreaterThanOrEqual(403);
+    });
+
+    // 🧪 8. rollback real: si un ítem no tiene stock, NINGÚN ítem se descuenta
+    it("should NOT decrement any stock if one item is out of stock (no partial write)", async () => {
+        const cable = await Product.create({
+            name: "Cable USB-C",
+            brand: "Generic",
+            category: "accessories",
+            model: "CABLE-1",
+            price: 100,
+            quantity: 1,
+            image: "https://test.com",
+            owner: sellerId,
+        });
+
+        const res = await request(app)
+            .post("/orders")
+            .set("Authorization", `Bearer ${buyerToken}`)
+            .send({
+                items: [
+                    { product: productId, quantity: 1 }, // iPhone: hay stock
+                    { product: cable._id.toString(), quantity: 5 }, // cable: NO hay
+                ],
+            });
+
+        expect(res.status).toBe(500);
+
+        // La transacción no dejó escritura parcial: ambos stocks intactos.
+        expect((await Product.findById(productId))?.quantity).toBe(5);
+        expect((await Product.findById(cable._id))?.quantity).toBe(1);
+
+        // No se creó ninguna orden.
+        expect(await Order.countDocuments()).toBe(0);
+    });
+
+    // 🧪 9. un seller ajeno (sin productos en la orden) no puede cambiar el estado
+    it("should NOT allow a seller without items in the order to change its status", async () => {
+        const createRes = await request(app)
+            .post("/orders")
+            .set("Authorization", `Bearer ${buyerToken}`)
+            .send({ items: [{ product: productId, quantity: 1 }] });
+
+        const orderId = createRes.body.id;
+
+        const reg = await request(app).post("/user/register").send({
+            username: "seller2",
+            email: "seller2-orders@test.com",
+            password: "123456",
+        });
+        const seller2Id = reg.body.user?.id || reg.body.id;
+        await UserMongo.findByIdAndUpdate(seller2Id, { role: "seller" });
+        const seller2Token = (
+            await request(app).post("/user/login").send({
+                email: "seller2-orders@test.com",
+                password: "123456",
+            })
+        ).body.token;
+
+        const res = await request(app)
+            .patch(`/orders/${orderId}/status`)
+            .set("Authorization", `Bearer ${seller2Token}`)
+            .send({ status: "paid" });
+
+        expect(res.status).toBeGreaterThanOrEqual(403);
+    });
 });

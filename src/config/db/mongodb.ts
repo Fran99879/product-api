@@ -20,8 +20,11 @@ export function resolveMongoUri(): string {
 export async function connectMongo() {
   try {
     const uri = resolveMongoUri()
+    // Pool de conexiones: 10 era un techo bajo para concurrencia. Default 50,
+    // ajustable por env (MONGO_POOL_SIZE) según el tier de Mongo en producción.
+    const maxPoolSize = Number(process.env.MONGO_POOL_SIZE) || 50
     await mongoose.connect(uri, {
-      maxPoolSize: 10,
+      maxPoolSize,
     })
 
     console.log(`MongoDB connected (db: ${mongoose.connection.name})`)
