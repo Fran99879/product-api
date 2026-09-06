@@ -49,11 +49,44 @@ export const productSchema = z.object({
 
   owner: z.string().optional(),
 })
-export const productUpdateSchema = productSchema.partial().strict()
+// `owner` y `sponsoredUntil` son server-owned: nunca se aceptan del cliente en
+// el update (evita mass-assignment: robar/regalar productos o auto-promocionarse
+// gratis). El resto de los campos son editables por el dueño.
+export const productUpdateSchema = productSchema
+  .omit({ owner: true })
+  .partial()
+  .strict()
 
 export type Product = z.infer<typeof productSchema> & {
   id: string
+  // Publicidad: fecha ISO hasta la que la promo sigue activa (o null) + flag
+  // derivado para el front (no tiene que recalcular el vencimiento).
+  sponsoredUntil?: string | null
+  isSponsored?: boolean
 }
+
+// -----------------------------------------------------------------------------
+// Publicidad: planes de promoción de productos patrocinados.
+// La fuente de verdad (días y precio) vive en el server: el cliente solo elige
+// un `plan` por id y el server decide la duración. Pago simulado (MVP): la
+// promo se activa al instante, sin cobro real. Listo para enchufar un cobro
+// real (Mercado Pago de la plataforma) más adelante.
+// -----------------------------------------------------------------------------
+export const PROMOTION_PLANS = {
+  basic: { id: 'basic', label: '7 días', days: 7, priceUsd: 3 },
+  plus: { id: 'plus', label: '15 días', days: 15, priceUsd: 6 },
+  premium: { id: 'premium', label: '30 días', days: 30, priceUsd: 10 },
+} as const
+
+export type PromotionPlanId = keyof typeof PROMOTION_PLANS
+
+export const PROMOTION_PLAN_LIST = Object.values(PROMOTION_PLANS)
+
+export const promoteProductSchema = z.object({
+  plan: z.enum(['basic', 'plus', 'premium']),
+})
+
+export type PromoteProductInput = z.infer<typeof promoteProductSchema>
 export type ProductInput = z.infer<typeof productSchema>
 export type ProductUpdate = z.infer<typeof productUpdateSchema>
 

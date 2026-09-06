@@ -18,4 +18,10 @@ export interface ProductModel {
   update(params: { id: string; input: ProductUpdate }): Promise<Product | null>
 
   delete(params: { id: string }): Promise<boolean>
+
+  /** Activa/extiende la promoción de un producto por `days` días. */
+  promote(params: { id: string; days: number }): Promise<Product | null>
+
+  /** Productos patrocinados activos, para la sección "Destacados" del home. */
+  getFeatured(params: { limit: number }): Promise<Product[]>
 }

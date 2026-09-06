@@ -9,23 +9,30 @@ import type {
   ProductUpdate,
 } from '../../../schemas/product.js'
 
-const mapDocToProduct = (doc: any): Product => ({
-  id: doc._id.toString(),
-  name: doc.name,
-  description: doc.description,
-  price: doc.price,
-  discountPercent: doc.discountPercent ?? 0,
-  image: doc.image,
-  brand: doc.brand,
-  category: doc.category,
-  model: doc.model,
-  rate: doc.rate,
-  owner: String(doc.owner),
-  quantity: doc.quantity,
-  isActive: doc.isActive,
-  // `find()` devuelve specs como Map; `aggregate()` como objeto plano.
-  specs: doc.specs instanceof Map ? Object.fromEntries(doc.specs) : (doc.specs ?? {}),
-})
+const mapDocToProduct = (doc: any): Product => {
+  const sponsoredUntil: Date | null = doc.sponsoredUntil ?? null
+  const isSponsored = sponsoredUntil !== null && new Date(sponsoredUntil).getTime() > Date.now()
+
+  return {
+    id: doc._id.toString(),
+    name: doc.name,
+    description: doc.description,
+    price: doc.price,
+    discountPercent: doc.discountPercent ?? 0,
+    image: doc.image,
+    brand: doc.brand,
+    category: doc.category,
+    model: doc.model,
+    rate: doc.rate,
+    owner: String(doc.owner),
+    quantity: doc.quantity,
+    isActive: doc.isActive,
+    // `find()` devuelve specs como Map; `aggregate()` como objeto plano.
+    specs: doc.specs instanceof Map ? Object.fromEntries(doc.specs) : (doc.specs ?? {}),
+    sponsoredUntil: sponsoredUntil ? new Date(sponsoredUntil).toISOString() : null,
+    isSponsored,
+  }
+}
 
 
 // Filtrar campos undefined para actualizar de forma segura
@@ -75,14 +82,31 @@ export const MongoProductModel: ProductModel = {
     const filter = buildFilter(query)
     const skip = (query.page - 1) * query.limit
 
-    // Los productos sin stock se muestran al final de la lista, sin importar el
-    // orden elegido: se ordena primero por "sin stock" y después por el sort.
-    const sortStage = { _outOfStock: 1, ...SORT_MAP[query.sort] } as Record<string, 1 | -1>
+    // Orden: primero los que tienen stock, luego los patrocinados activos
+    // (boost de publicidad dentro del resultado de esa categoría/búsqueda) y
+    // por último el sort elegido por el usuario.
+    const sortStage = {
+      _outOfStock: 1,
+      _sponsored: -1,
+      ...SORT_MAP[query.sort],
+    } as Record<string, 1 | -1>
 
     const [docs, total] = await Promise.all([
       ProductSchema.aggregate([
         { $match: filter },
-        { $addFields: { _outOfStock: { $cond: [{ $lte: ['$quantity', 0] }, 1, 0] } } },
+        {
+          $addFields: {
+            _outOfStock: { $cond: [{ $lte: ['$quantity', 0] }, 1, 0] },
+            // Patrocinado activo = tiene sponsoredUntil en el futuro.
+            _sponsored: {
+              $cond: [
+                { $gt: [{ $ifNull: ['$sponsoredUntil', new Date(0)] }, '$$NOW'] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
         { $sort: sortStage },
         { $skip: skip },
         { $limit: query.limit },
@@ -126,5 +150,35 @@ export const MongoProductModel: ProductModel = {
     if (!mongoose.Types.ObjectId.isValid(id)) return false
     const result = await ProductSchema.findByIdAndDelete(id)
     return result !== null
+  },
+
+  async promote({ id, days }: { id: string; days: number }) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null
+
+    const doc = await ProductSchema.findById(id)
+    if (!doc) return null
+
+    // Si ya está patrocinado, el impulso se acumula desde el vencimiento actual;
+    // si no, arranca desde ahora.
+    const current = doc.get('sponsoredUntil') as Date | null
+    const now = Date.now()
+    const base = current && current.getTime() > now ? current.getTime() : now
+    doc.set('sponsoredUntil', new Date(base + days * 24 * 60 * 60 * 1000))
+    await doc.save()
+
+    return mapDocToProduct(doc)
+  },
+
+  async getFeatured({ limit }: { limit: number }) {
+    const docs = await ProductSchema.find({
+      sponsoredUntil: { $gt: new Date() },
+      isActive: true,
+      quantity: { $gt: 0 },
+    })
+      // Las promos que vencen antes primero (rotan a medida que expiran).
+      .sort({ sponsoredUntil: 1 })
+      .limit(limit)
+
+    return docs.map(mapDocToProduct)
   },
 }

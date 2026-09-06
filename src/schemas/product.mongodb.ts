@@ -97,6 +97,14 @@ const productSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+
+    // Publicidad (productos patrocinados): fecha hasta la que la promo está
+    // activa. `null`/pasado = no patrocinado. Lo setea SOLO el endpoint de
+    // promoción (nunca el update del vendedor), así que no es mass-assignable.
+    sponsoredUntil: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: {  createdAt: true, updatedAt: false },
@@ -115,5 +123,7 @@ productSchema.index({ rate: -1 })
 productSchema.index({ createdAt: -1 })
 // - filtro por marca
 productSchema.index({ brand: 1 })
+// - sección "Destacados" del home y boost de patrocinados en búsqueda
+productSchema.index({ sponsoredUntil: 1 })
 
 export const Product = mongoose.model('Product', productSchema)

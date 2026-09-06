@@ -10,6 +10,8 @@ import {
   productUpdateSchema,
   productQuerySchema,
   productIdSchema,
+  promoteProductSchema,
+  PROMOTION_PLAN_LIST,
 } from '../schemas/product.js'
 
 import type { ProductModel } from '../models/product.model.js'
@@ -19,6 +21,15 @@ export const createProductRouter = ({ productModel }: { productModel: ProductMod
   const productController = new ProductController(productModel)
 
   productRouter.get('/', validateSchema(productQuerySchema, 'query'), productController.getAll)
+
+  // Sección "Destacados" del home (patrocinados activos). Pública.
+  // Va antes de '/:id' para que no la capture como si "featured" fuera un id.
+  productRouter.get('/featured', productController.getFeatured)
+
+  // Planes de promoción disponibles (fuente de verdad del server, para la UI).
+  productRouter.get('/promotion-plans', (_req, res) => {
+    res.json(PROMOTION_PLAN_LIST)
+  })
 
   productRouter.get(
     '/my-products',
@@ -58,6 +69,18 @@ export const createProductRouter = ({ productModel }: { productModel: ProductMod
     validateSchema(productIdSchema, 'params'),
     canEditProduct(productModel),
     productController.delete
+  )
+
+  // Promocionar (publicidad). Solo el dueño (o admin) puede promocionar su
+  // producto; el plan lo valida y traduce a días el server.
+  productRouter.post(
+    '/:id/promote',
+    authRequired,
+    requireRoles('seller', 'admin'),
+    validateSchema(productIdSchema, 'params'),
+    validateSchema(promoteProductSchema, 'body'),
+    canEditProduct(productModel),
+    productController.promote
   )
 
   return productRouter

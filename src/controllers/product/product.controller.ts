@@ -1,8 +1,15 @@
 import type { Request, Response } from 'express'
 import type { ProductModel } from '../../models/product.model.js'
-import type { ProductQuery } from '../../schemas/product.js'
+import {
+  type ProductQuery,
+  type PromotionPlanId,
+  PROMOTION_PLANS,
+  promoteProductSchema,
+} from '../../schemas/product.js'
 import { AppError } from '../../errors/appError.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
+
+const FEATURED_LIMIT = 8
 
 export class ProductController {
   constructor(private readonly productModel: ProductModel) {}
@@ -34,6 +41,30 @@ export class ProductController {
     if (!product) throw new AppError('Product not found', 404)
     res.json(product)
   }
+
+  // Sección "Destacados" del home: productos patrocinados activos.
+  getFeatured = async (_req: Request, res: Response) => {
+    const products = await this.productModel.getFeatured({ limit: FEATURED_LIMIT })
+    res.json(products)
+  }
+
+  // Promoción de un producto (publicidad). Ownership ya validado por
+  // canEditProduct; el plan (días/precio) lo decide el server. Pago simulado
+  // (MVP): se activa al instante, sin cobro real.
+  promote = asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
+    const result = promoteProductSchema.safeParse(req.body)
+    if (!result.success) throw new AppError('Invalid promotion plan', 400)
+
+    const plan = PROMOTION_PLANS[result.data.plan as PromotionPlanId]
+
+    const updated = await this.productModel.promote({
+      id: req.params.id,
+      days: plan.days,
+    })
+    if (!updated) throw new AppError('Product not found', 404)
+
+    res.json({ product: updated, plan })
+  })
 
   update = asyncHandler(async (req: Request<{ id: string }>, res: Response) => {
     const updated = await this.productModel.update({
